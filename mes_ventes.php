@@ -307,6 +307,19 @@ include 'header.php';
                                         </svg>
                                     </button>
                                     <?php endif; ?>
+                                    <?php if ($vente['statut'] == 'annulee' && $is_admin): ?>
+                                    <button type="button" class="btn btn-outline-danger btn-delete-vente" 
+                                            data-id="<?php echo $vente['id_vente']; ?>"
+                                            data-numero="<?php echo e($vente['numero_facture']); ?>"
+                                            data-bs-toggle="tooltip" title="Supprimer définitivement (Admin)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                                        </svg>
+                                    </button>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>
@@ -327,20 +340,41 @@ document.addEventListener('DOMContentLoaded', function() {
             const id = this.dataset.id;
             const numero = this.dataset.numero;
             
-            console.log('🎯 Bouton annuler cliqué:', {id, numero});
+            if (typeof showConfirmModal === 'function') {
+                showConfirmModal({
+                    title: 'Annuler la vente',
+                    message: `Êtes-vous sûr de vouloir annuler la vente ${numero} ? Le stock sera restauré.`,
+                    onConfirm: () => cancelVente(id)
+                });
+            } else {
+                if (confirm(`Annuler la vente ${numero} ? Le stock sera restauré.`)) {
+                    cancelVente(id);
+                }
+            }
+        });
+    });
+    
+    // Suppression définitive (admin)
+    document.querySelectorAll('.btn-delete-vente').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.dataset.id;
+            const numero = this.dataset.numero;
             
-            // Utiliser confirm() natif pour debug
-            const confirmed = confirm(`Annuler la vente ${numero} ? Le stock sera restauré.`);
-            console.log('👤 Utilisateur a confirmé:', confirmed);
-            
-            if (confirmed) {
-                cancelVente(id);
+            if (typeof showConfirmModal === 'function') {
+                showConfirmModal({
+                    title: '⚠️ Supprimer définitivement',
+                    message: `ATTENTION : Voulez-vous vraiment SUPPRIMER définitivement la vente ${numero} ? Cette action est IRRÉVERSIBLE.`,
+                    onConfirm: () => deleteVente(id)
+                });
+            } else {
+                if (confirm(`ATTENTION : Supprimer définitivement la vente ${numero} ? IRRÉVERSIBLE !`)) {
+                    deleteVente(id);
+                }
             }
         });
     });
     
     function cancelVente(id) {
-        alert('🚀 Début annulation vente ID: ' + id);
         console.log('🎯 cancelVente appelée avec id:', id);
         
         fetch('ajax/cancel_vente.php', {
@@ -348,37 +382,91 @@ document.addEventListener('DOMContentLoaded', function() {
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body: new URLSearchParams({id_vente: id})
         })
-        .then(r => {
-            console.log('📡 Réponse HTTP reçue:', r.status, r.statusText);
-            alert('📡 HTTP ' + r.status + ': ' + r.statusText);
-            if (!r.ok) {
-                throw new Error(`HTTP ${r.status}: ${r.statusText}`);
-            }
-            return r.text();
-        })
-        .then(text => {
-            console.log('📄 Texte brut reçu:', text);
-            alert('📄 Réponse serveur:\n' + text);
-            
-            try {
-                const data = JSON.parse(text);
-                console.log('✅ JSON parsé:', data);
-                alert('✅ Parsed JSON:\n' + JSON.stringify(data, null, 2));
-                
-                if (data.success) {
-                    alert('✅ SUCCÈS:\n' + data.message);
-                    setTimeout(() => location.reload(), 1000);
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                if (typeof showAlertModal === 'function') {
+                    showAlertModal({
+                        title: 'Succès',
+                        message: data.message,
+                        type: 'success',
+                        onClose: () => location.reload()
+                    });
                 } else {
-                    alert('❌ ERREUR:\n' + (data.message || 'Erreur inconnue'));
+                    alert(data.message);
+                    location.reload();
                 }
-            } catch (e) {
-                console.error('❌ Erreur parsing JSON:', e);
-                alert('❌ Erreur parsing JSON:\n' + e.message + '\n\nRéponse:\n' + text);
+            } else {
+                if (typeof showAlertModal === 'function') {
+                    showAlertModal({
+                        title: 'Erreur',
+                        message: data.message,
+                        type: 'error'
+                    });
+                } else {
+                    alert('Erreur: ' + data.message);
+                }
             }
         })
         .catch(e => {
-            console.error('❌ Erreur fetch:', e);
-            alert('❌ Erreur de connexion:\n' + e.message);
+            console.error(e);
+            if (typeof showAlertModal === 'function') {
+                showAlertModal({
+                    title: 'Erreur',
+                    message: 'Erreur de connexion: ' + e.message,
+                    type: 'error'
+                });
+            } else {
+                alert('Erreur de connexion');
+            }
+        });
+    }
+    
+    function deleteVente(id) {
+        console.log('🗑️ deleteVente appelée avec id:', id);
+        
+        fetch('ajax/delete_vente.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: new URLSearchParams({id_vente: id})
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                if (typeof showAlertModal === 'function') {
+                    showAlertModal({
+                        title: 'Succès',
+                        message: data.message,
+                        type: 'success',
+                        onClose: () => location.reload()
+                    });
+                } else {
+                    alert(data.message);
+                    location.reload();
+                }
+            } else {
+                if (typeof showAlertModal === 'function') {
+                    showAlertModal({
+                        title: 'Erreur',
+                        message: data.message,
+                        type: 'error'
+                    });
+                } else {
+                    alert('Erreur: ' + data.message);
+                }
+            }
+        })
+        .catch(e => {
+            console.error(e);
+            if (typeof showAlertModal === 'function') {
+                showAlertModal({
+                    title: 'Erreur',
+                    message: 'Erreur de connexion: ' + e.message,
+                    type: 'error'
+                });
+            } else {
+                alert('Erreur de connexion');
+            }
         });
     }
 });
