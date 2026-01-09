@@ -40,17 +40,28 @@ try {
     try {
         // Restaurer le stock pour chaque produit
         foreach ($details as $detail) {
-            db_execute("
-                UPDATE produits 
-                SET quantite_stock = quantite_stock + ? 
-                WHERE id_produit = ?
-            ", [$detail['quantite'], $detail['id_produit']]);
+            // Récupérer le stock actuel avant modification
+            $produit_current = db_fetch_one(
+                "SELECT quantite_stock FROM produits WHERE id_produit = ?",
+                [$detail['id_produit']]
+            );
+            $stock_avant = $produit_current['quantite_stock'];
+            
+            // Mettre à jour le stock
+            db_execute(
+                "UPDATE produits SET quantite_stock = quantite_stock + ? WHERE id_produit = ?",
+                [$detail['quantite'], $detail['id_produit']]
+            );
+            
+            $stock_apres = $stock_avant + $detail['quantite'];
             
             // Enregistrer le mouvement de stock
             db_insert('mouvements_stock', [
                 'id_produit' => $detail['id_produit'],
                 'type_mouvement' => 'entree',
                 'quantite' => $detail['quantite'],
+                'quantite_avant' => $stock_avant,
+                'quantite_apres' => $stock_apres,
                 'motif' => 'Annulation vente ' . $vente['numero_facture'],
                 'id_utilisateur' => $user_id,
                 'date_mouvement' => date('Y-m-d H:i:s')
