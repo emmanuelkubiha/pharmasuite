@@ -147,8 +147,8 @@ include 'header.php';
                                     </div>
                                     <?php endif; ?>
                                     
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <strong class="text-primary fs-5"><?php echo format_montant($produit['prix_vente'], $devise); ?></strong>
+                                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-1">
+                                        <strong class="text-primary fs-6"><?php echo format_montant($produit['prix_vente'], $devise); ?></strong>
                                         <span class="badge <?php echo $produit['quantite_stock'] <= 10 ? 'bg-warning' : 'bg-success'; ?>">
                                             Stock: <?php echo $produit['quantite_stock']; ?>
                                         </span>
@@ -635,15 +635,39 @@ document.addEventListener('DOMContentLoaded', function() {
                     cart = [];
                     updateCart();
                     
-                    alert(data.message || 'Vente enregistrée avec succès');
+                    // Afficher modal de succès
+                    if (typeof showAlertModal === 'function') {
+                        showAlertModal({
+                            title: 'Succès',
+                            message: data.message || 'Vente enregistrée avec succès',
+                            type: 'success'
+                        });
+                    } else {
+                        alert(data.message || 'Vente enregistrée avec succès');
+                    }
                     
+                    // Ouvrir la facture
                     if (data.id_vente) {
                         console.log('📄 Ouverture facture ID:', data.id_vente);
                         window.open('facture_impression_v2.php?id=' + data.id_vente, '_blank');
                     }
+                    
+                    // Recharger la page après 2 secondes pour mettre à jour les stocks
+                    setTimeout(() => {
+                        console.log('🔄 Rechargement de la page...');
+                        location.reload();
+                    }, 2000);
                 } else {
                     console.error('❌ Erreur métier:', data.message);
-                    alert('Erreur: ' + (data.message || 'Une erreur est survenue'));
+                    if (typeof showAlertModal === 'function') {
+                        showAlertModal({
+                            title: 'Erreur',
+                            message: data.message || 'Une erreur est survenue',
+                            type: 'error'
+                        });
+                    } else {
+                        alert('Erreur: ' + (data.message || 'Une erreur est survenue'));
+                    }
                 }
             } catch (e) {
                 console.error('❌ Erreur parsing JSON:', e);
