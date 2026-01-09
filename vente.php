@@ -89,9 +89,9 @@ include 'header.php';
                 </div>
             </div>
             <div class="col-auto">
-                <a href="listes.php#ventes" class="btn btn-outline-primary me-2">
+                <a href="mes_ventes.php" class="btn btn-outline-primary me-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 5H7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2V7a2 2 0 0 0 -2 -2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/></svg>
-                    Liste des ventes
+                    Mes ventes
                 </a>
                 <a href="accueil.php" class="btn btn-outline-secondary">
                     ← Retour
@@ -274,7 +274,7 @@ include 'header.php';
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
                 <button type="button" class="btn btn-success btn-lg" id="btnConfirmAdd">
-                    ✅ Ajouter au panier
+                     Ajouter au panier
                 </button>
             </div>
         </div>
@@ -582,25 +582,28 @@ document.addEventListener('DOMContentLoaded', function() {
         const confirmMessage = `Confirmer la vente pour ${totalTTC.toLocaleString('fr-FR', {minimumFractionDigits: 2})} <?php echo $devise; ?> ?`;
         
         const executeSale = () => {
+            console.log('🚀 Exécution de la vente...');
+            
             const formData = new FormData();
             formData.append('id_client', document.getElementById('clientSelect').value || '');
             formData.append('cart', JSON.stringify(cart));
             
-            // Afficher un loader
-            if (typeof showAlertModal === 'function') {
-                showAlertModal({
-                    title: 'Traitement en cours',
-                    message: 'Validation de la vente...',
-                    type: 'info'
-                });
-            }
+            console.log('📦 Données envoyées:', {
+                id_client: document.getElementById('clientSelect').value,
+                cart: cart
+            });
             
             fetch('ajax/process_vente.php', {
                 method: 'POST',
                 body: formData
             })
-            .then(r => r.json())
+            .then(r => {
+                console.log('📡 Réponse reçue:', r.status);
+                return r.json();
+            })
             .then(data => {
+                console.log('✅ Données:', data);
+                
                 if (data.success) {
                     cart = [];
                     updateCart();
@@ -635,7 +638,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(e => {
-                console.error('Erreur:', e);
+                console.error('❌ Erreur catch:', e);
                 if (typeof showAlertModal === 'function') {
                     showAlertModal({
                         title: 'Erreur de connexion',
@@ -650,12 +653,17 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Confirmer avant de valider
         if (typeof showConfirmModal === 'function') {
+            console.log('🔔 Affichage modal confirmation');
             showConfirmModal({
                 title: 'Confirmer la vente',
                 message: confirmMessage,
-                onConfirm: executeSale
+                onConfirm: () => {
+                    console.log('✅ Confirmation reçue, exécution vente');
+                    executeSale();
+                }
             });
         } else {
+            console.log('⚠ Pas de showConfirmModal, utilisation confirm()');
             if (confirm(confirmMessage)) {
                 executeSale();
             }

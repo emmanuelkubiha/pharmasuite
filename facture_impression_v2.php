@@ -241,6 +241,24 @@ try {
             opacity: 0.9;
         }
         
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            opacity: 0.9;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            opacity: 0.9;
+        }
+        
         .btn-secondary {
             background: #6c757d;
             color: white;
@@ -300,7 +318,31 @@ try {
     <div class="invoice-container">
         <!-- Boutons action -->
         <div class="btn-group">
-            <button class="btn btn-primary" onclick="window.print()">🖨️ Imprimer</button>
+            <button class="btn btn-primary" onclick="window.print()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2"/>
+                    <path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4"/>
+                    <rect x="7" y="13" width="10" height="8" rx="2"/>
+                </svg>
+                Imprimer
+            </button>
+            <button class="btn btn-danger" onclick="downloadPDF()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 3v4a1 1 0 0 0 1 1h4"/>
+                    <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/>
+                    <line x1="12" y1="11" x2="12" y2="17"/>
+                    <polyline points="9 14 12 17 15 14"/>
+                </svg>
+                Télécharger PDF
+            </button>
+            <button class="btn btn-success" onclick="savePDF()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2"/>
+                    <circle cx="12" cy="14" r="2"/>
+                    <polyline points="14 4 14 8 8 8 8 4"/>
+                </svg>
+                Sauvegarder PDF
+            </button>
             <button class="btn btn-secondary" onclick="window.close()">Fermer</button>
         </div>
         
@@ -415,5 +457,33 @@ try {
             <p>Merci d'avoir fait confiance à <?php echo e($nom_boutique); ?> | Facture générée le <?php echo date('d/m/Y à H:i'); ?></p>
         </div>
     </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+        function downloadPDF() {
+            // Cacher les boutons temporairement
+            const buttons = document.querySelector('.btn-group');
+            buttons.style.display = 'none';
+            
+            const element = document.querySelector('.invoice-container');
+            const opt = {
+                margin: 10,
+                filename: 'Facture_<?php echo $vente['numero_facture']; ?>.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            
+            html2pdf().set(opt).from(element).save().then(() => {
+                // Réafficher les boutons
+                buttons.style.display = '';
+            });
+        }
+        
+        function savePDF() {
+            // Même fonction que downloadPDF
+            downloadPDF();
+        }
+    </script>
 </body>
 </html>

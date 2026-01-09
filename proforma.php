@@ -116,7 +116,21 @@ $numero_proforma = 'PRO-' . date('Ymd') . '-' . substr(uniqid(), -6);
         <!-- Header -->
         <div class="invoice-header">
             <div class="row align-items-center">
-                <div class="col-md-8">
+                <div class="col-md-2 text-center">
+                    <?php if (!empty($logo_boutique) && file_exists("uploads/logos/$logo_boutique")): ?>
+                    <img src="uploads/logos/<?php echo htmlspecialchars($logo_boutique); ?>" 
+                         alt="Logo" 
+                         style="max-width: 100px; max-height: 100px; padding: 10px; border-radius: 10px; object-fit: contain;">
+                    <?php else: ?>
+                    <div style="width: 100px; height: 100px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                            <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
+                            <polyline points="17 2 12 7 7 2"></polyline>
+                        </svg>
+                    </div>
+                    <?php endif; ?>
+                </div>
+                <div class="col-md-6">
                     <h1 class="mb-0"><?php echo htmlspecialchars($config['nom_boutique']); ?></h1>
                     <p class="mb-0"><?php echo htmlspecialchars($config['adresse_boutique'] ?? ''); ?></p>
                     <p class="mb-0">
@@ -216,22 +230,56 @@ $numero_proforma = 'PRO-' . date('Ymd') . '-' . substr(uniqid(), -6);
 
     <!-- Buttons -->
     <div class="text-center my-4 no-print">
-        <button onclick="window.print()" class="btn btn-warning btn-lg me-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2"/><path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4"/><rect x="7" y="13" width="10" height="8" rx="2"/></svg>
-            Imprimer Proforma
+        <button onclick="window.print()" class="btn btn-warning me-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2"/><path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4"/><rect x="7" y="13" width="10" height="8" rx="2"/></svg>
+            Imprimer
         </button>
-        <a href="vente.php" class="btn btn-outline-secondary btn-lg">
+        <button onclick="downloadPDF()" class="btn btn-danger me-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><polyline points="9 14 12 17 15 14"/></svg>
+            Télécharger PDF
+        </button>
+        <button onclick="savePDF()" class="btn btn-primary me-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2"/><circle cx="12" cy="14" r="2"/><polyline points="14 4 14 8 8 8 8 4"/></svg>
+            Sauvegarder PDF
+        </button>
+        <a href="vente.php" class="btn btn-outline-secondary me-2">
             <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><line x1="5" y1="12" x2="19" y2="12"/><line x1="5" y1="12" x2="9" y2="16"/><line x1="5" y1="12" x2="9" y2="8"/></svg>
             Retour aux ventes
         </a>
-        <button onclick="convertToSale()" class="btn btn-success btn-lg">
-            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><polyline points="9 11 12 14 20 6"/><path d="M20 12v6a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h9"/></svg>
+        <button onclick="convertToSale()" class="btn btn-success">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><polyline points="9 11 12 14 20 6"/><path d="M20 12v6a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h9"/></svg>
             Convertir en vente définitive
         </button>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
+        function downloadPDF() {
+            // Cacher les boutons temporairement
+            const buttons = document.querySelectorAll('.no-print');
+            buttons.forEach(btn => btn.style.display = 'none');
+            
+            const element = document.querySelector('.invoice-container');
+            const opt = {
+                margin: 10,
+                filename: 'Proforma_<?php echo $numero_proforma; ?>.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            
+            html2pdf().set(opt).from(element).save().then(() => {
+                // Réafficher les boutons
+                buttons.forEach(btn => btn.style.display = '');
+            });
+        }
+        
+        function savePDF() {
+            // Même fonction mais avec option de sauvegarde locale
+            downloadPDF();
+        }
+        
         function convertToSale() {
             if (confirm('Voulez-vous enregistrer cette proforma comme vente définitive ?')) {
                 // Rediriger vers vente.php avec les données pré-remplies

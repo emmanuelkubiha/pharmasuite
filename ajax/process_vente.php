@@ -22,9 +22,10 @@ try {
     $id_client = !empty($_POST['id_client']) ? intval($_POST['id_client']) : null;
     
     // Vérifier le stock pour chaque produit
+    $stocks = [];
     foreach ($cart as $item) {
         $produit = db_fetch_one(
-            "SELECT quantite_stock FROM produits WHERE id_produit = ?",
+            "SELECT id_produit, quantite_stock FROM produits WHERE id_produit = ?",
             [$item['id']]
         );
         
@@ -35,6 +36,8 @@ try {
         if ($produit['quantite_stock'] < $item['quantite']) {
             throw new Exception("Stock insuffisant pour {$item['nom']} (disponible: {$produit['quantite_stock']})");
         }
+        
+        $stocks[$item['id']] = $produit['quantite_stock'];
     }
     
     // Générer le numéro de facture
@@ -101,12 +104,15 @@ try {
             );
             
             // Enregistrer le mouvement de stock
+            $stock_avant = $stocks[$item['id']];
+            $stock_apres = $stock_avant - $item['quantite'];
+            
             db_insert('mouvements_stock', [
                 'id_produit' => $item['id'],
                 'type_mouvement' => 'sortie',
                 'quantite' => $item['quantite'],
-                'stock_avant' => $produit['quantite_stock'],
-                'stock_apres' => $produit['quantite_stock'] - $item['quantite'],
+                'stock_avant' => $stock_avant,
+                'stock_apres' => $stock_apres,
                 'motif' => 'Vente ' . $numero_facture,
                 'id_utilisateur' => $user_id,
                 'date_mouvement' => date('Y-m-d H:i:s')
