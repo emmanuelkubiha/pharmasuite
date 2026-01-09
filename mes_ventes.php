@@ -319,7 +319,8 @@ include 'header.php';
     </div>
 </div>
 
-<document.addEventListener('DOMContentLoaded', function() {
+<script>
+document.addEventListener('DOMContentLoaded', function() {
     // Annulation de vente
     document.querySelectorAll('.btn-cancel-vente').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -381,5 +382,6 @@ include 'header.php';
         });
     }
 });
+</script>
 
 <?php include 'footer.php'; ?>
