@@ -340,16 +340,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const id = this.dataset.id;
             const numero = this.dataset.numero;
             
-            if (typeof showConfirmModal === 'function') {
-                showConfirmModal({
-                    title: 'Annuler la vente',
-                    message: `Êtes-vous sûr de vouloir annuler la vente ${numero} ? Le stock sera restauré.`,
-                    onConfirm: () => cancelVente(id)
-                });
-            } else {
-                if (confirm(`Annuler la vente ${numero} ? Le stock sera restauré.`)) {
-                    cancelVente(id);
-                }
+            console.log('❌ Bouton annuler cliqué:', {id, numero});
+            
+            // Utiliser confirm() natif pour fiabilité
+            const confirmed = confirm(`Annuler la vente ${numero} ?\n\nLe stock sera restauré.`);
+            console.log('👤 Utilisateur a confirmé annulation:', confirmed);
+            
+            if (confirmed) {
+                cancelVente(id);
             }
         });
     });
@@ -383,18 +381,23 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(r => r.json())
         .then(data => {
             if (data.success) {
+                console.log('✅ Annulation réussie');
                 if (typeof showAlertModal === 'function') {
                     showAlertModal({
                         title: 'Succès',
                         message: data.message,
-                        type: 'success',
-                        onClose: () => location.reload()
+                        type: 'success'
                     });
                 } else {
                     alert(data.message);
-                    location.reload();
                 }
+                // Recharger après 1 seconde
+                setTimeout(() => {
+                    console.log('🔄 Rechargement page...');
+                    location.reload();
+                }, 1000);
             } else {
+                console.error('❌ Erreur annulation:', data.message);
                 if (typeof showAlertModal === 'function') {
                     showAlertModal({
                         title: 'Erreur',
@@ -407,7 +410,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(e => {
-            console.error(e);
+            console.error('❌ Erreur fetch:', e);
             if (typeof showAlertModal === 'function') {
                 showAlertModal({
                     title: 'Erreur',
@@ -415,7 +418,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     type: 'error'
                 });
             } else {
-                alert('Erreur de connexion');
+                alert('Erreur de connexion: ' + e.message);
             }
         });
     }
