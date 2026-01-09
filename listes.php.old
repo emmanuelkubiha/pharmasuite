@@ -1,0 +1,773 @@
+<?php
+    session_start();
+    require_once("connexion.php");
+
+    $_GET['page'] = 2;
+
+    $mc = "";
+
+    if(isset($_POST['fac']))
+    {
+        $mc = htmlspecialchars(trim(addslashes($_POST['fac'])));
+    }
+
+    $id_utilisateur = $_SESSION['ID'];
+	
+    $req = "select * from UTILISATEUR where ID_UTILISATEUR = $id_utilisateur ";
+    $rs = mysqli_query($connexion, $req);
+    
+    $ET = mysqli_fetch_assoc($rs);
+?>
+<!doctype html>
+
+<html lang="FR">
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
+    <title><?php echo $ET100['TITRE']?> - Listes des produits et autres</title>
+    <!-- CSS files -->
+    <link href="./dist/css/tabler.min.css" rel="stylesheet"/>
+    <link href="./dist/css/tabler-flags.min.css" rel="stylesheet"/>
+    <link href="./dist/css/tabler-payments.min.css" rel="stylesheet"/>
+    <link href="./dist/css/tabler-vendors.min.css" rel="stylesheet"/>
+    <link href="./dist/css/demo.min.css" rel="stylesheet"/>
+  </head>
+  <style>
+    .table-responsive {
+        margin-bottom: 0rem !important;
+    }
+
+#qrcode {
+  margin: 10px auto;
+  display: -webkit-inline-box;
+}
+
+canvas {
+  border: 10px #e6e64cfa double;
+}
+
+.imgblock {
+  margin: 10px 0;
+  text-align: center;
+  float: left;
+  min-height: 250px;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: bold;
+  color: #fff;
+  text-align: center;
+  width: 280px;
+  margin: 10px 5px;
+  height: 60px;
+  background-color: #307fdd;
+  line-height: 60px;
+}
+  </style>
+  <body class="antialiased">
+    <div class="wrapper">
+      <?php include('header.php'); ?>
+      <div class="page-wrapper">
+        <div class="container-xl">
+          <!-- Page title -->
+          <div class="page-header d-print-none">
+            <div class="row align-items-center">
+              <div class="col">
+                <h2 class="page-title">
+                  Listes
+                </h2>
+              </div>
+              <?php if($_SESSION['NIVEAU'] == 1){ ?>
+              <div class="col-auto ms-auto d-print-none">
+                <div class="btn-list">
+                  <a href="#" class="btn btn-primary d-none d-sm-inline-block" data-bs-toggle="modal" data-bs-target="#modal-report">
+                    <!-- Download SVG icon from http://tabler-icons.io/i/plus -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                    Ajouter un produit
+                  </a>
+                  <!-- 
+                  <span class="d-none d-sm-inline" data-bs-toggle="modal" data-bs-target="#modal-team1">
+                    <a href="#" class="btn btn-white">
+                      Download SVG icon from http://tabler-icons.io/i/plus
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                    Ajouter un bloc
+                    </a>
+                  </span>
+                  -->
+                  <span class="d-none d-sm-inline" data-bs-toggle="modal" data-bs-target="#modal-team2">
+                    <a href="#" class="btn btn-white">
+                      <!-- Download SVG icon from http://tabler-icons.io/i/plus -->
+                      <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                    Ajouter un utilisateur
+                    </a>
+                  </span>
+                  <span class="d-none d-sm-inline" data-bs-toggle="modal" data-bs-target="#modal-team3">
+                    <a href="#" class="btn btn-white">
+                    <!-- Download SVG icon from http://tabler-icons.io/i/brightness-2 -->
+	                  <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="3" /><path d="M6 6h3.5l2.5 -2.5l2.5 2.5h3.5v3.5l2.5 2.5l-2.5 2.5v3.5h-3.5l-2.5 2.5l-2.5 -2.5h-3.5v-3.5l-2.5 -2.5l2.5 -2.5z" /></svg>
+                    Plus
+                    </a>
+                  </span>
+                  <a href="#" class="btn btn-primary d-sm-none btn-icon" data-bs-toggle="modal" data-bs-target="#modal-team3" aria-label="Ajouter un médicament">
+                      <!-- Download SVG icon from http://tabler-icons.io/i/plus -->
+                      <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="3" /><path d="M6 6h3.5l2.5 -2.5l2.5 2.5h3.5v3.5l2.5 2.5l-2.5 2.5v3.5h-3.5l-2.5 2.5l-2.5 -2.5h-3.5v-3.5l-2.5 -2.5l2.5 -2.5z" /></svg>
+                  </a>
+                </div>
+              </div>
+              <?php } ?>
+            </div>
+          </div>
+        </div>
+        <div class="page-body">
+          <div class="container-xl">
+            <div class="row row-cards">
+            <div class="col-12">
+                <div class="card">
+                  <div class="card-header">
+                    <h3 class="card-title">Liste des produits</h3>
+                    <a href="#" class="btn btn-primary d-sm-none btn-icon col-auto ms-auto d-print-none" data-bs-toggle="modal" data-bs-target="#modal-report" aria-label="Ajouter une catégorie">
+                      <!-- Download SVG icon from http://tabler-icons.io/i/plus -->
+                      <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                    </a>
+                  </div>
+                  <div class="table-responsive" style="height: calc(24rem + 10px)">
+                    <table id="table_produit" class="table card-table table-vcenter text-nowrap datatable card-body-scrollable card-body-scrollable-shadow">
+                      <thead>
+                        <tr>
+                          <th class="w-1">No.</th>
+                          <th>Nom</th>
+                          <?php if($_SESSION['NIVEAU'] == 1){ ?><th class="text-center">Prix d'achat</th><?php } ?>
+                          <th class="text-center">Prix de vente</th>
+                          <th class="text-center">Quantité stock</th>
+                          <?php if($_SESSION['NIVEAU'] == 1){ ?><th></th><?php } ?>
+                        </tr>
+                      </thead>
+                      <tbody>
+                      <?php
+                        $i = 1;
+                        $req = "select count(*) as nombre from PRODUIT where TITRE_PRODUIT like '%$mc%' ";
+                        $rs200 = mysqli_query($connexion,$req);
+                        $ET200=mysqli_fetch_assoc($rs200);
+
+                        $req = "select * from PRODUIT where TITRE_PRODUIT like '%$mc%' order by ID_PRODUIT desc ";
+                        $rs = mysqli_query($connexion,$req);
+                        while($ET=mysqli_fetch_assoc($rs)){
+                    ?>
+                        <tr>
+                          <td><span class="text-muted">00<?php echo $i++ ?></span></td>
+                          <td><a href="#!" class="text-reset" tabindex="-1"><?php echo $ET['TITRE_PRODUIT'] ?></a></td>
+                          <?php if($_SESSION['NIVEAU'] == 1){ ?><td class="text-center"><?php echo $ET['PRIX_ACHAT_PRODUIT'] ?> $</td><?php } ?>
+                          <td class="text-center"><?php echo $ET['PRIX_VENTE_PRODUIT'] ?> $</td>
+                          <td class="text-center"><?php echo $ET['QUANTITE_PRODUIT'] ?></td>
+                          <?php if($_SESSION['NIVEAU'] == 1){ ?>
+                          <td class="text-end">
+                            <span class="dropdown">
+                              <button class="btn dropdown-toggle align-text-top" data-bs-boundary="viewport" data-bs-toggle="dropdown">Actions</button>
+                              <div class="dropdown-menu dropdown-menu-end">
+                                  <a href="#!" class="dropdown-item btn_voir" data-bs-toggle="modal" data-bs-target="#modal-report-voir-qr-code" id_produit="<?php echo $ET['ID_PRODUIT']?>" titre_produit="<?php echo $ET['TITRE_PRODUIT']?>">
+                                    <!-- Download SVG icon from http://tabler-icons.io/i/qrcode -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><rect x="4" y="4" width="6" height="6" rx="1" /><line x1="7" y1="17" x2="7" y2="17.01" /><rect x="14" y="4" width="6" height="6" rx="1" /><line x1="7" y1="7" x2="7" y2="7.01" /><rect x="4" y="14" width="6" height="6" rx="1" /><line x1="17" y1="7" x2="17" y2="7.01" /><line x1="14" y1="14" x2="17" y2="14" /><line x1="20" y1="14" x2="20" y2="14.01" /><line x1="14" y1="14" x2="14" y2="17" /><line x1="14" y1="20" x2="17" y2="20" /><line x1="17" y1="17" x2="20" y2="17" /><line x1="20" y1="17" x2="20" y2="20" /></svg>
+                                    QR Code
+                                  </a>
+                                  <a class="dropdown-item" href="?id_produit=<?php echo $ET['ID_PRODUIT']?>#modification_produit">
+                                    <!-- Download SVG icon from http://tabler-icons.io/i/edit -->
+                                  <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 7h-3a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-3" /><path d="M9 15h3l8.5 -8.5a1.5 1.5 0 0 0 -3 -3l-8.5 8.5v3" /><line x1="16" y1="5" x2="19" y2="8" /></svg>
+                                  Modifier
+                                  </a>
+                                  <a class="dropdown-item supprimer" href="./dist/traitement/supprimer_produit.php?id_produit=<?php echo $ET['ID_PRODUIT']?>">
+                                    <!-- Download SVG icon from http://tabler-icons.io/i/trash -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><line x1="4" y1="7" x2="20" y2="7" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
+                                    Supprimer
+                                  </a>
+                              </div>
+                            </span>
+                          </td>
+                          <?php } ?>
+                        </tr>
+                        <?php } ?>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="card-footer d-flex align-items-center">
+                    <p class="m-0 text-muted">Total <span><?php echo $ET200['nombre'] ?></span> produit<?php if($ET200['nombre'] >1) echo 's';?></p>
+                  </div>
+                </div>
+              </div>
+            
+            <?php 
+            if(isset($_GET['id_produit'])){
+
+                $id_produit = $_GET['id_produit'];
+
+                $req = "select * from PRODUIT where ID_PRODUIT = $id_produit ";
+                $rs = mysqli_query($connexion, $req);
+
+                if($u1=mysqli_fetch_assoc($rs)){
+             ?>
+            <div class="col-md-12">
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title">Modification du produit</h3>
+                </div>
+                <div class="card-body" id="modification_produit">
+                  <form class="formulaire" action="./dist/traitement/modifier_produit.php?id_produit=<?php echo $u1['ID_PRODUIT'] ?>">
+                    <div class="form-group mb-3 row">
+                      <label class="form-label col-3 col-form-label">Nom du produit</label>
+                      <div class="col">
+                       <input type="text" name="nom" class="form-control" value="<?php echo $u1['TITRE_PRODUIT'] ?>">
+                      </div>
+                    </div>
+                    <div class="form-group mb-3 row">
+                      <label class="form-label col-3 col-form-label">Prix d'achat</label>
+                      <div class="col">
+                       <input type="number" min="0.1" step="0.1" class="form-control" name="prix_achat" value="<?php echo $u1['PRIX_ACHAT_PRODUIT'] ?>">
+                      </div>
+                    </div>
+                    <div class="form-group mb-3 row">
+                      <label class="form-label col-3 col-form-label">Prix de vente</label>
+                      <div class="col">
+                       <input type="number" min="0.1" step="0.1" class="form-control" name="prix_vente" value="<?php echo $u1['PRIX_VENTE_PRODUIT'] ?>">
+                      </div>
+                    </div>
+                    <div class="form-group mb-3 row">
+                      <label class="form-label col-3 col-form-label">Quantité du produit</label>
+                      <div class="col">
+                       <input type="number" min="0" name="quantite" class="form-control" value="<?php echo $u1['QUANTITE_PRODUIT'] ?>">
+                      </div>
+                    </div>
+                    <div class="form-group mb-3 row">
+                      <label class="form-label col-3 col-form-label">Seuil stock de signalisation</label>
+                      <div class="col">
+                       <input type="number" min="0" name="signaler" class="form-control" value="<?php echo $u1['SEUIL_PRODUIT'] ?>">
+                      </div>
+                    </div>
+                    <div class="card-footer text-end">
+                        <div class="d-flex">
+                            <a href="listes.php" class="btn btn-link">Annuler</a>
+                            <button type="submit" class="btn btn-primary ms-auto">Modifier</button>
+                        </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+            <?php }} ?>
+
+
+
+              <?php if($_SESSION['NIVEAU'] == 1){ ?>
+              
+              <div class="col-12">
+                <div class="card">
+                  <div class="card-header">
+                    <h3 class="card-title">Liste des utilisateurs</h3>
+                    <a href="#" class="btn btn-primary d-sm-none btn-icon col-auto ms-auto d-print-none" data-bs-toggle="modal" data-bs-target="#modal-team2" aria-label="Ajouter une catégorie">
+                      <!-- Download SVG icon from http://tabler-icons.io/i/plus -->
+                      <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                    </a>
+                  </div>
+                  <div class="table-responsive container-xl" style="height: calc(24rem + 10px)">
+                    <div class="row row-cards card-body-scrollable card-body-scrollable-shadow">
+                      
+                    <?php
+                        $i = 1;
+                        $niveau = '';
+
+                        $req = "select count(*) as nombre from UTILISATEUR ";
+                        $rs200 = mysqli_query($connexion,$req);
+                        $ET200=mysqli_fetch_assoc($rs200);
+
+                        $req = "select * from UTILISATEUR where LOGIN like '%$mc%' order by LOGIN ";
+                        $rs20 = mysqli_query($connexion,$req);
+                        while($ET20=mysqli_fetch_assoc($rs20)){
+
+                          if ($ET20['NIVEAU'] == 1) {
+                            $niveau = 'Administrateur';
+                          }
+                          else {
+                            $niveau = 'Utilisateur simple';
+                          }
+                    ?>
+                      <div class="col-md-6 col-lg-3 mt-4">
+                        <div class="card">
+                          <div class="card-body p-4 text-center">
+                            <span class="avatar avatar-xl mb-3 avatar-rounded"><?php echo strtoupper(substr($ET20['LOGIN'], 0,2)) ?></span>
+                            <h3 class="m-0 mb-1"><a href="#"><?php echo $ET20['NOM'] ?></a></h3>
+                            <h3 class="m-0 mb-1"><a href="#"><?php echo $ET20['LOGIN'] ?></a></h3>
+                            <div class="text-muted"><?php echo $niveau ?></div>
+                          </div>
+                          <?php if($_SESSION['NIVEAU'] == 1){ ?>
+                          <div class="d-flex">
+                            <a href="?id_utilisateur=<?php echo $ET20['ID_UTILISATEUR']?>#modification_utilisateur" class="card-btn text-dark bg-green-lt btn-primary btn_vente btn_modifier">
+                              <!-- Download SVG icon from http://tabler-icons.io/i/edit -->
+	                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 7h-3a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-3" /><path d="M9 15h3l8.5 -8.5a1.5 1.5 0 0 0 -3 -3l-8.5 8.5v3" /><line x1="16" y1="5" x2="19" y2="8" /></svg>
+                              Modifier</a>
+                            <a href="./dist/traitement/supprimer_utilisateur.php?id_utilisateur=<?php echo $ET20['ID_UTILISATEUR']?>&page=2" class="card-btn text-dark bg-green-lt btn-primary btn_vente supprimer">
+                              <!-- Download SVG icon from http://tabler-icons.io/i/trash -->
+	                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><line x1="4" y1="7" x2="20" y2="7" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
+                              Supprimer</a>
+                          </div>
+                          <?php } ?>
+                        </div>
+                      </div>
+
+                      <?php } ?>
+                      
+                    </div>
+                  </div>
+                    <div class="card-footer d-flex align-items-center">
+                      <p class="m-0 text-muted">Total : <span><?php echo $ET200['nombre'] ?></span> utilisateur<?php if($ET200['nombre'] >1) echo 's';?></p>
+                    </div>
+                </div>
+              </div>
+            
+            <?php 
+            if(isset($_GET['id_utilisateur'])){
+
+                $id_utilisateur = $_GET['id_utilisateur'];
+
+                $req = "select * from UTILISATEUR where ID_UTILISATEUR = $id_utilisateur ";
+                $rs = mysqli_query($connexion, $req);
+
+                if($u1=mysqli_fetch_assoc($rs)){
+             ?>
+            <div class="col-md-12">
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title">Modification de l'utilisateur</h3>
+                </div>
+                <div class="card-body" id="modification_utilisateur">
+                  <form class="formulaire" action="./dist/traitement/modifier_utilisateur.php?id_utilisateur=<?php echo $u1['ID_UTILISATEUR'] ?>">
+                    <div class="form-group mb-3 row">
+                      <label class="form-label col-3 col-form-label">Identifiant de l'utilisateur</label>
+                      <div class="col">
+                       <input type="text" name="login" class="form-control" value="<?php echo $u1['LOGIN'] ?>">
+                      </div>
+                    </div>
+                    <div class="form-group mb-3 row">
+                      <label class="form-label col-3 col-form-label">Mot de passe de l'utilisateur</label>
+                      <div class="col">
+                        <input type="hidden" name="passe1" value="<?php echo $u1['PASSE']?>" class="form-control"/>
+                        <input type="password" name="passe" class="form-control" aria-describedby="" placeholder="Mot de passe">
+                      </div>
+                    </div>
+                    <div class="form-group mb-3 row">
+                      <label class="form-label col-3 col-form-label">Niveau de l'utilisateur</label>
+                      <div class="col">
+                        <select class="form-select" name="niveau">
+                          <?php if($u1['NIVEAU'] == 0){ ?>
+                          <option value="0" selected>Utilisateur simple</option>
+                          <option value="1">Administrateur</option>
+                          <?php } elseif($u1['NIVEAU'] == 1){ ?>
+                          <option value="0">Utilisateur simple</option>
+                          <option value="1" selected>Administrateur</option>
+                          <?php } ?>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="form-group mb-3 row">
+                      <label class="form-label col-3 col-form-label">Votre nom complet</label>
+                      <div class="col">
+                        <input type="text" name="nom" value="<?php echo $u1['NOM']?>" class="form-control"/>
+                      </div>
+                    </div>
+                    <div class="card-footer text-end">
+                        <div class="d-flex">
+                            <a href="listes.php" class="btn btn-link">Annuler</a>
+                            <button type="submit" class="btn btn-primary ms-auto">Modifier</button>
+                        </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+            <?php }} ?>
+
+              
+              <?php } ?>
+            </div>
+          </div>
+        </div>
+        <!-- DEBUT Les formulaires d'ajout -->
+        <div class="modal modal-blur fade" id="modal-team2" tabindex="-1" role="dialog" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+              <form class="formulaire" action="./dist/traitement/ajouter_utilisateurscript.php" method="POST">
+              <div class="modal-header">
+                <h5 class="modal-title">Ajouter un utilisateur</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <div class="row mb-3 align-items-end">
+                  <div class="col">
+                    <label class="form-label">Identifiant</label>
+                    <input type="text" name="login" class="form-control" required/>
+                  </div>
+                  <div class="col">
+                    <label class="form-label">Mot de passe</label>
+                    <input type="password" name="passe" class="form-control" required/>
+                  </div>
+                </div>
+                <label class="form-label">Niveau de l'administrateur</label>
+                <div class="form-selectgroup-boxes row mb-3">
+                  <div class="col-lg-6 mt-2">
+                    <label class="form-selectgroup-item">
+                      <input type="radio" name="niveau" value="1" class="form-selectgroup-input">
+                      <span class="form-selectgroup-label d-flex align-items-center p-3">
+                        <span class="me-3">
+                          <span class="form-selectgroup-check"></span>
+                        </span>
+                        <span class="form-selectgroup-label-content">
+                          <span class="d-block text-muted">Administrateur full</span>
+                        </span>
+                      </span>
+                    </label>
+                  </div>
+                  <div class="col-lg-6 mt-2">
+                    <label class="form-selectgroup-item">
+                      <input type="radio" name="niveau" value="0" class="form-selectgroup-input" checked>
+                      <span class="form-selectgroup-label d-flex align-items-center p-3">
+                        <span class="me-3">
+                          <span class="form-selectgroup-check"></span>
+                        </span>
+                        <span class="form-selectgroup-label-content">
+                          <span class="d-block text-muted">Administrateur simple</span>
+                        </span>
+                      </span>
+                    </label>
+                  </div>
+                  <div class="col-lg-12 mt-3">
+                      <label class="form-label">Votre nom complet</label>
+                      <input type="text" name="nom" class="form-control" required/>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn me-auto" data-bs-dismiss="modal">Fermer</button>
+                <input type="submit" class="btn btn-primary" data-bs-dismiss="modal" value="Ajouter"></button>
+              </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        <div class="modal modal-blur fade" id="modal-team3" tabindex="-1" role="dialog" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+              <form class="formulaire" action="./dist/traitement/modifier_plusscript.php" enctype="multipart/form-data" method="POST">
+              <div class="modal-header">
+                <h5 class="modal-title">Modifier le paramètre</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                  <div class="col mb-3">
+                    <label class="form-label">Appelation de la maison de vente</label>
+                    <input type="text" name="titre" value="<?php echo $ET100['TITRE']?>" class="form-control"/>
+                  </div>
+                <div class="col mb-3">
+                  <label class="form-label">Adresse de la maison de vente</label>
+                  <input type="text" name="adresse" value="<?php echo $ET100['ADRESSE']?>" class="form-control"/>
+                </div>
+                <div class="col mb-3">
+                  <label class="form-label">Numéros de téléphone de la maison de vente</label>
+                  <input type="text" name="phone" value="<?php echo $ET100['PHONE']?>" class="form-control"/>
+                </div>
+                <div class="col">
+                  <label class="form-label">Numéro RCCN</label>
+                  <input type="text" name="num" value="<?php echo $ET100['NUM_NATIONAL']?>" class="form-control"/>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn me-auto" data-bs-dismiss="modal">Fermer</button>
+                <input type="submit" class="btn btn-primary" data-bs-dismiss="modal" value="Modifier"></button>
+              </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        <div class="modal modal-blur fade" id="modal-report" tabindex="-1" role="dialog" aria-hidden="true">
+          <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+              <form class="formulaire" action="./dist/traitement/ajouter_produit.php" method="POST">
+              <div class="modal-header">
+                <h5 class="modal-title">Ajouter un produit</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label class="form-label">Nom du produit</label>
+                  <input type="text" name="nom" class="form-control" placeholder="Entrer le nom du produit" required>
+                </div>
+                <div class="row">
+                  <div class="col-lg-6">
+                      <div class="mb-3">
+                      <label class="form-label">Prix d'achat</label>
+                      <input type="number" min="0.1" step="0.1" class="form-control" name="prix_achat" placeholder="Entrer Prix d'achat" required>
+                    </div>
+                  </div>
+                  <div class="col-lg-6">
+                    <div class="mb-3">
+                    <label class="form-label">Prix de vente</label>
+                    <input type="number" min="0.1" step="0.1" class="form-control" name="prix_vente" placeholder="Entrer Prix de vente" required>
+                  </div>
+                </div>
+                  <div class="col-lg-6">
+                    <div>
+                      <label class="form-label">Quantité du produit</label>
+                      <input type="number" min="0" name="quantite" class="form-control" required>
+                    </div>
+                  </div>
+                  <div class="col-lg-6">
+                    <div>
+                      <label class="form-label">Seuil stock de signalisation</label>
+                      <input type="number" min="0" name="signaler" class="form-control" required>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn me-auto" data-bs-dismiss="modal">Fermer</button>
+                <input type="submit" class="btn btn-primary" data-bs-dismiss="modal" value="Ajouter"></button>
+              </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        <!-- FIN Les formulaires d'ajout -->
+        <?php include('footer.php') ?>
+      </div>
+    </div>
+
+    
+<div class="modal modal-blur fade" id="modal-report-voir-qr-code" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div id="qrcode" class="text-center mt-3"></div>
+        <div class="modal-body mb-3">
+            <div class="h3 text-center" id="titre-produit"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <!-- Libs JS -->
+    <!-- Tabler Core -->
+    <script src="./dist/js/tabler.min.js"></script>
+
+    <script src="./dist/js/jquery-3.2.1.min.js"></script>
+    <script src="./dist/js/sweetalert2.all.js"></script>
+    <script src="./dist/js/sweetalert2.js"></script>
+    <script src="./dist/js/sweetalert2.min.js"></script>
+    <script src="./dist/js/sweetalert2.all.min.js"></script>
+    <script src="./dist/js/traitement.js"></script>
+    <script src="./dist/js/nous.js"></script>
+		<script src="./dist/js/easy.qrcode.min.js" type="text/javascript" charset="utf-8"></script>
+    <script>
+
+$('#search_produit').on('keyup input blur select click', function () {
+    var value = $(this).val().toLowerCase();
+
+    $('#table_produit tbody tr').filter(function () {
+        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+    });
+});
+  
+  $('.formulaire').on('submit',function(e){
+      e.preventDefault();
+
+      var donnees = $(this).serialize();
+  
+      lien = $(this).attr('action');
+
+      swal.fire({
+          html: '<p>Patienter<span class="animated-dots"></span></p>',
+          imageUrl: './dist/loader.gif',
+          showConfirmButton: false,
+          allowOutsideClick: false,
+      });
+
+      $.post(lien, donnees, function(response) {
+          
+          if (response == 1) {
+
+            swal.fire({
+                text: "Bien ajouté !",
+                icon: "success",
+                showConfirmButton: false,
+                timer: 2000,
+            });
+
+            document.location.reload();
+              
+          }
+          else
+          {
+
+            swal.fire({
+                text: "Il y a un problème !",
+                icon: "warning",
+                showConfirmButton: false,
+                timer: 4000,
+            });
+
+          }
+  
+      })
+
+  });
+            $('.btn_deconnexion').on('click',function(e){
+                e.preventDefault();
+                swal.fire({
+                    text: 'Vous voulez vous déconnecter ?',
+                    icon: "question",
+                    showConfirmButton: true,
+                    showCancelButton: true,
+                    confirmButtonColor: '#3885d6',
+                    cancelButtonColor:'#d33',
+                    confirmButtonText: 'Oui',
+                    cancelButtonText: 'Non',
+                }).then((result)=>{
+                    if(result.value){
+                        document.location.href='deconnexion.php';
+                    }
+                })
+            })
+
+            $('.supprimer').on('click',function(e){
+                e.preventDefault();
+
+                swal.fire({
+                    text: 'Vous voulez supprimer ?',
+                    icon: "question",
+                    showConfirmButton: true,
+                    showCancelButton: true,
+                    confirmButtonColor: '#3885d6',
+                    cancelButtonColor:'#232e3c',
+                    confirmButtonText: 'Oui',
+                    cancelButtonText: 'Non',
+                }).then((result)=>{
+                    if(result.value){
+
+                    var lien = $(this).attr('href');
+
+                    swal.fire({
+                        html: '<p>Patienter<span class="animated-dots"></span></p>',
+                        imageUrl: './dist/loader.gif',
+                        showConfirmButton: false,
+                        allowOutsideClick: false,
+                    });
+
+                    $.post(lien, function(response) {
+                        
+                        if (response == 1){
+
+                            swal.fire({
+                                text: "Bien supprimée !",
+                                icon: "success",
+                                showConfirmButton: false,
+                                timer: 2000,
+                            });
+                            
+                        }
+
+                        document.location.reload();
+
+                    })
+
+                    }
+                })
+
+            })
+            
+        </script>
+        <script type="text/template" id="qrcodeTpl">
+          <div class="imgblock">
+            <div class="title" style="display:none;">{title}</div>
+            <div class="qr" id="qrcode_{i}"></div>
+          </div>
+        </script>
+        <script type="text/javascript">
+
+        $('.btn_voir').on('click',function(e){
+          e.preventDefault();
+
+          const id_produit = $(this).attr('id_produit');
+          const titre_produit = $(this).attr('titre_produit');
+
+          document.getElementById('titre-produit').innerHTML = titre_produit;
+          //document.getElementById('qrcode-produit').innerHTML = titre_produit;
+
+          var demoParams = [
+            
+            {
+              title: titre_produit,
+              config: {
+                text: id_produit, // Content
+
+                width: 240, // Widht
+                height: 240, // Height
+                colorDark: "#000000", // Dark color
+                colorLight: "#ffffff", // Light color
+                            
+                //quietZone: 15,
+                //quietZoneColor: '#307fdd',
+
+                // === Logo
+                //logo: "./static/logo/logo_qrcode.png", // LOGO
+                //logo:"http://127.0.0.1:8020/easy-qrcodejs/demo/logo.png", 
+                //logo: logo, 
+                //logoWidth:200, 
+                //logoHeight:200,
+                logoBackgroundColor: '#ffffff', // Logo backgroud color, Invalid when `logBgTransparent` is true; default is '#ffffff'
+                logoBackgroundTransparent: false, // Whether use transparent image, default is false
+
+
+                correctLevel: QRCode.CorrectLevel.H // L, M, Q, H
+
+              }
+
+            }
+
+          ]
+
+          var qrcodeTpl = document.getElementById("qrcodeTpl").innerHTML;
+          var container = document.getElementById('qrcode');
+
+          for (var i = 0; i < demoParams.length; i++) {
+            var qrcodeHTML = qrcodeTpl.replace(/\{title\}/, demoParams[i].title).replace(/{i}/, i);
+            container.innerHTML+=qrcodeHTML;
+          }
+          for (var i = 0; i < demoParams.length; i++) {
+            var t=new QRCode(document.getElementById("qrcode_"+i), demoParams[i].config);
+          }
+                  
+        })
+        </script>
+  </body>
+</html>
+
+<?php if(isset ($_GET['code'])){ 
+    if(($_GET['code'])==1){ ?>
+    <script>			
+        swal.fire({
+        text: " Bien effectué !",
+        icon: "success",
+        showConfirmButton: false,
+        timer: 2000,
+        });
+    </script>
+<?php } } ?>
+
+<?php if(isset ($_GET['code'])){ 
+    if(($_GET['code'])==0){ ?>
+    <script>			
+        swal.fire({
+        text: " Cette entrée existe déjà !",
+        icon: "error",
+        showConfirmButton: false,
+        timer: 3000,
+        });
+    </script>
+<?php } } ?>
