@@ -360,16 +360,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const id = this.dataset.id;
             const numero = this.dataset.numero;
             
-            if (typeof showConfirmModal === 'function') {
-                showConfirmModal({
-                    title: '⚠️ Supprimer définitivement',
-                    message: `ATTENTION : Voulez-vous vraiment SUPPRIMER définitivement la vente ${numero} ? Cette action est IRRÉVERSIBLE.`,
-                    onConfirm: () => deleteVente(id)
-                });
-            } else {
-                if (confirm(`ATTENTION : Supprimer définitivement la vente ${numero} ? IRRÉVERSIBLE !`)) {
-                    deleteVente(id);
-                }
+            console.log('🗑️ Bouton supprimer cliqué:', {id, numero});
+            
+            // Utiliser confirm() pour être sûr que ça marche
+            const confirmed = confirm(`⚠️ ATTENTION ⚠️\n\nVoulez-vous vraiment SUPPRIMER définitivement la vente ${numero} ?\n\nCette action est IRRÉVERSIBLE !`);
+            console.log('👤 Admin a confirmé suppression:', confirmed);
+            
+            if (confirmed) {
+                deleteVente(id);
             }
         });
     });
