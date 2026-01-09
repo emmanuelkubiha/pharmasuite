@@ -32,7 +32,7 @@ mb_internal_encoding('UTF-8');
             --couleur-secondaire: <?php echo $couleur_secondaire; ?>;
         }
         
-        /* Menu Navigation Professionnel */
+        /* Menu Navigation Professionnel - Cohérence couleurs */
         .navbar-nav {
             align-items: center;
         }
@@ -43,18 +43,32 @@ mb_internal_encoding('UTF-8');
             letter-spacing: 0.3px;
             border-radius: 8px !important;
             margin: 0 2px;
+            color: #495057 !important;
+            transition: all 0.3s ease;
         }
         
         .nav-item .nav-link:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+            background: #e9ecef;
         }
         
+        /* Menu actif - TOUJOURS EN BLANC */
         .nav-item.active .nav-link {
             position: relative;
             overflow: hidden;
             color: white !important;
             font-weight: 600;
+            background: linear-gradient(135deg, <?php echo $couleur_primaire; ?>, <?php echo $couleur_secondaire; ?>) !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+        }
+        
+        .nav-item.active .nav-link * {
+            color: white !important;
+        }
+        
+        .nav-item.active .nav-link svg {
+            stroke: white !important;
         }
         
         .nav-item.active .nav-link::before {
@@ -66,6 +80,13 @@ mb_internal_encoding('UTF-8');
             height: 3px;
             background: white;
             box-shadow: 0 2px 8px rgba(255,255,255,0.4);
+        }
+        
+        /* Hover sur menu actif - garde le blanc */
+        .nav-item.active .nav-link:hover {
+            background: linear-gradient(135deg, <?php echo $couleur_primaire; ?>, <?php echo $couleur_secondaire; ?>) !important;
+            color: white !important;
+            transform: translateY(-2px);
         }
         
         /* Dropdown Administration Style Amélioré */
@@ -312,10 +333,7 @@ mb_internal_encoding('UTF-8');
                         <ul class="navbar-nav" style="gap: 0.5rem;">
                             <!-- Accueil -->
                             <li class="nav-item <?php echo (basename($_SERVER['PHP_SELF']) == 'accueil.php') ? 'active' : ''; ?>">
-                                <a class="nav-link d-flex align-items-center px-3 py-2 rounded-2" href="accueil.php" 
-                                   style="transition: all 0.3s ease; <?php echo (basename($_SERVER['PHP_SELF']) == 'accueil.php') ? 'background: linear-gradient(135deg, ' . $couleur_primaire . ', ' . $couleur_secondaire . '); color: white !important; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.15);' : ''; ?>"
-                                   onmouseover="if(!this.classList.contains('active')) this.style.background='#e9ecef';"
-                                   onmouseout="if(!this.classList.contains('active')) this.style.background='transparent';">
+                                <a class="nav-link d-flex align-items-center px-3 py-2 rounded-2" href="accueil.php">
                                     <span class="nav-link-icon d-inline-block me-2">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
@@ -330,10 +348,7 @@ mb_internal_encoding('UTF-8');
                             
                             <!-- Vente -->
                             <li class="nav-item <?php echo (basename($_SERVER['PHP_SELF']) == 'vente.php') ? 'active' : ''; ?>">
-                                <a class="nav-link d-flex align-items-center px-3 py-2 rounded-2" href="vente.php"
-                                   style="transition: all 0.3s ease; <?php echo (basename($_SERVER['PHP_SELF']) == 'vente.php') ? 'background: linear-gradient(135deg, ' . $couleur_primaire . ', ' . $couleur_secondaire . '); color: white !important; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.15);' : ''; ?>"
-                                   onmouseover="if(!this.classList.contains('active')) this.style.background='#e9ecef';"
-                                   onmouseout="if(!this.classList.contains('active')) this.style.background='transparent';">
+                                <a class="nav-link d-flex align-items-center px-3 py-2 rounded-2" href="vente.php">
                                     <span class="nav-link-icon d-inline-block me-2">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
@@ -349,10 +364,7 @@ mb_internal_encoding('UTF-8');
                             
                             <!-- Produits -->
                             <li class="nav-item <?php echo (basename($_SERVER['PHP_SELF']) == 'listes.php') ? 'active' : ''; ?>">
-                                <a class="nav-link d-flex align-items-center px-3 py-2 rounded-2" href="listes.php"
-                                   style="transition: all 0.3s ease; <?php echo (basename($_SERVER['PHP_SELF']) == 'listes.php') ? 'background: linear-gradient(135deg, ' . $couleur_primaire . ', ' . $couleur_secondaire . '); color: white !important; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.15);' : ''; ?>"
-                                   onmouseover="if(!this.classList.contains('active')) this.style.background='#e9ecef';"
-                                   onmouseout="if(!this.classList.contains('active')) this.style.background='transparent';">
+                                <a class="nav-link d-flex align-items-center px-3 py-2 rounded-2" href="listes.php">
                                     <span class="nav-link-icon d-inline-block me-2">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
@@ -370,10 +382,7 @@ mb_internal_encoding('UTF-8');
                             
                             <!-- Rapports -->
                             <li class="nav-item <?php echo (basename($_SERVER['PHP_SELF']) == 'rapports.php') ? 'active' : ''; ?>">
-                                <a class="nav-link d-flex align-items-center px-3 py-2 rounded-2" href="rapports.php"
-                                   style="transition: all 0.3s ease; <?php echo (basename($_SERVER['PHP_SELF']) == 'rapports.php') ? 'background: linear-gradient(135deg, ' . $couleur_primaire . ', ' . $couleur_secondaire . '); color: white !important; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.15);' : ''; ?>"
-                                   onmouseover="if(!this.classList.contains('active')) this.style.background='#e9ecef';"
-                                   onmouseout="if(!this.classList.contains('active')) this.style.background='transparent';">
+                                <a class="nav-link d-flex align-items-center px-3 py-2 rounded-2" href="rapports.php">
                                     <span class="nav-link-icon d-inline-block me-2">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
@@ -389,10 +398,7 @@ mb_internal_encoding('UTF-8');
                             <!-- Administration (Admin Only) -->
                             <?php if ($is_admin): ?>
                             <li class="nav-item dropdown <?php echo in_array(basename($_SERVER['PHP_SELF']), ['tableau_de_bord.php', 'parametres.php']) ? 'active' : ''; ?>">
-                                <a class="nav-link dropdown-toggle d-flex align-items-center px-3 py-2 rounded-2" href="#navbar-admin" data-bs-toggle="dropdown" role="button" aria-expanded="false"
-                                   style="transition: all 0.3s ease; <?php echo in_array(basename($_SERVER['PHP_SELF']), ['tableau_de_bord.php', 'parametres.php']) ? 'background: linear-gradient(135deg, ' . $couleur_primaire . ', ' . $couleur_secondaire . '); color: white !important; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.15);' : ''; ?>"
-                                   onmouseover="if(!this.classList.contains('active')) this.style.background='#e9ecef';"
-                                   onmouseout="if(!this.classList.contains('active')) this.style.background='transparent';">
+                                <a class="nav-link dropdown-toggle d-flex align-items-center px-3 py-2 rounded-2" href="#navbar-admin" data-bs-toggle="dropdown" role="button" aria-expanded="false">
                                     <span class="nav-link-icon d-inline-block me-2">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"/>

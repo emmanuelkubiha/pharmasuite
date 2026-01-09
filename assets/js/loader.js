@@ -13,11 +13,14 @@ function showLoader() {
     }
 }
 
-// Fonction pour cacher le loader
+// Fonction pour cacher le loader avec délai minimum
 function hideLoader() {
     const loader = document.getElementById('pageLoader');
     if (loader) {
-        loader.classList.add('hidden');
+        // Délai minimum de 1.5 secondes pour voir l'animation
+        setTimeout(function() {
+            loader.classList.add('hidden');
+        }, 2000); // 2000ms = 2 secondes
     }
 }
 
@@ -27,7 +30,7 @@ if (document.readyState === 'loading') {
         hideLoader();
     });
 } else {
-    // Si le DOM est déjà chargé, cacher immédiatement
+    // Si le DOM est déjà chargé, cacher avec délai
     hideLoader();
 }
 
