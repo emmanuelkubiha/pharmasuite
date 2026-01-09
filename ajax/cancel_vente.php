@@ -69,9 +69,9 @@ try {
         }
         
         // Marquer la vente comme annulée
-        db_update('ventes', 
-            ['statut' => 'annulee'],
-            ['id_vente' => $id_vente]
+        db_execute(
+            "UPDATE ventes SET statut = ? WHERE id_vente = ?",
+            ['annulee', $id_vente]
         );
         
         // Log de l'activité
