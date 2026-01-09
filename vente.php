@@ -503,10 +503,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function updateTotals(subtotal) {
-        const tva = subtotal * TVA_RATE;
-        const total = subtotal + tva;
+        // Le prix saisi est TTC (inclut TVA 16%)
+        // Extraire TVA : TVA = TTC / 1.16, HT = TVA / 0.16
+        const total = subtotal; // TTC
+        const montantHT = subtotal / 1.16;
+        const tva = subtotal - montantHT;
         
-        document.getElementById('cartSubtotal').textContent = subtotal.toLocaleString('fr-FR', {minimumFractionDigits: 2}) + ' <?php echo $devise; ?>';
+        document.getElementById('cartSubtotal').textContent = montantHT.toLocaleString('fr-FR', {minimumFractionDigits: 2}) + ' <?php echo $devise; ?>';
         document.getElementById('cartTVA').textContent = tva.toLocaleString('fr-FR', {minimumFractionDigits: 2}) + ' <?php echo $devise; ?>';
         document.getElementById('cartTotal').textContent = total.toLocaleString('fr-FR', {minimumFractionDigits: 2}) + ' <?php echo $devise; ?>';
     }

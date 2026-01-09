@@ -53,13 +53,15 @@ try {
     );
     
     // Calculer les montants
-    $montant_ht = 0;
+    // Le prix saisi est TTC (inclut TVA 16%)
+    $montant_total = 0;
     foreach ($cart as $item) {
-        $montant_ht += $item['prix'] * $item['quantite'];
+        $montant_total += $item['prix'] * $item['quantite'];
     }
     
-    $montant_tva = round($montant_ht * 0.16, 2);
-    $montant_total = $montant_ht + $montant_tva;
+    // Extraire TVA du TTC
+    $montant_ht = round($montant_total / 1.16, 2);
+    $montant_tva = round($montant_total - $montant_ht, 2);
     $montant_remise = 0; // TODO: Ajouter support des remises
     
     // Commencer la transaction
@@ -111,8 +113,8 @@ try {
                 'id_produit' => $item['id'],
                 'type_mouvement' => 'sortie',
                 'quantite' => $item['quantite'],
-                'stock_avant' => $stock_avant,
-                'stock_apres' => $stock_apres,
+                'quantite_avant' => $stock_avant,
+                'quantite_apres' => $stock_apres,
                 'motif' => 'Vente ' . $numero_facture,
                 'id_utilisateur' => $user_id,
                 'date_mouvement' => date('Y-m-d H:i:s')
