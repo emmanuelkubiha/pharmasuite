@@ -9,6 +9,80 @@ header('Content-Type: application/json');
 $response = ['success' => false, 'message' => ''];
 
 try {
+    $action = $_POST['action'] ?? 'create';
+    
+    // Action d'annulation de vente
+    if ($action === 'cancel_vente') {
+        if (!$is_admin) {
+            throw new Exception('Action réservée aux administrateurs');
+        }
+        
+        $id_vente = intval($_POST['id_vente'] ?? 0);
+        if (!$id_vente) {
+            throw new Exception('ID vente manquant');
+        }
+        
+        // Récupérer les détails de la vente
+        $vente = db_fetch_one("SELECT * FROM ventes WHERE id_vente = ? AND statut != 'annulee'", [$id_vente]);
+        if (!$vente) {
+            throw new Exception('Vente non trouvée ou déjà annulée');
+        }
+        
+        // Débuter transaction
+        db_begin_transaction();
+        
+        // Récupérer les détails de vente pour remettre le stock
+        $details = db_fetch_all("SELECT * FROM details_vente WHERE id_vente = ?", [$id_vente]);
+        
+        foreach ($details as $detail) {
+            // Remettre le stock
+            db_execute("UPDATE produits SET quantite_stock = quantite_stock + ? WHERE id_produit = ?", [
+                $detail['quantite'],
+                $detail['id_produit']
+            ]);
+            
+            // Enregistrer le mouvement de stock
+            db_execute("INSERT INTO mouvements_stock (
+                id_produit,
+                type_mouvement,
+                quantite,
+                stock_avant,
+                stock_apres,
+                id_utilisateur,
+                motif,
+                date_mouvement
+            ) SELECT 
+                ?,
+                'entree',
+                ?,
+                quantite_stock - ?,
+                quantite_stock,
+                ?,
+                ?,
+                NOW()
+            FROM produits WHERE id_produit = ?", [
+                $detail['id_produit'],
+                $detail['quantite'],
+                $detail['quantite'],
+                $user_id,
+                "Annulation vente - Facture " . $vente['numero_facture'],
+                $detail['id_produit']
+            ]);
+        }
+        
+        // Marquer la vente comme annulée
+        db_execute("UPDATE ventes SET statut = 'annulee' WHERE id_vente = ?", [$id_vente]);
+        
+        db_commit();
+        
+        $response['success'] = true;
+        $response['message'] = 'Vente annulée avec succès. Le stock a été remis à jour.';
+        
+        echo json_encode($response);
+        exit;
+    }
+    
+    // Action de création de vente (code existant)
     // Récupération des données
     $id_client = !empty($_POST['id_client']) ? intval($_POST['id_client']) : null;
     $mode_paiement = $_POST['mode_paiement'] ?? 'especes';

@@ -17,10 +17,10 @@ function showLoader() {
 function hideLoader() {
     const loader = document.getElementById('pageLoader');
     if (loader) {
-        // Délai minimum de 1.5 secondes pour voir l'animation
+        // Délai minimum de 1.0 secondes pour voir l'animation
         setTimeout(function() {
             loader.classList.add('hidden');
-        }, 2000); // 2000ms = 2 secondes
+        }, 1000); // 1000ms = 1 seconde
     }
 }
 

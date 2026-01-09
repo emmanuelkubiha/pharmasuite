@@ -830,22 +830,31 @@ require_once('header.php');
             <?php
             break;
         case 'mouvements':
-            $mouvements = db_fetch_all("
-                SELECT m.*, p.nom_produit, p.unite, u.nom_complet
-                FROM mouvements_stock m
-                LEFT JOIN produits p ON m.id_produit = p.id_produit
-                LEFT JOIN utilisateurs u ON m.id_utilisateur = u.id_utilisateur
-                ORDER BY m.date_mouvement DESC
-                LIMIT 200
-            ");
-            
-            $entrees = 0;
-            $sorties = 0;
-            $ajustements = 0;
-            foreach($mouvements as $mv) {
-                if($mv['type_mouvement'] == 'entree') $entrees++;
-                elseif($mv['type_mouvement'] == 'sortie') $sorties++;
-                elseif($mv['type_mouvement'] == 'ajustement') $ajustements++;
+            try {
+                $mouvements = db_fetch_all("
+                    SELECT m.*, p.nom_produit, p.unite_mesure as unite, u.nom_complet
+                    FROM mouvements_stock m
+                    LEFT JOIN produits p ON m.id_produit = p.id_produit
+                    LEFT JOIN utilisateurs u ON m.id_utilisateur = u.id_utilisateur
+                    ORDER BY m.date_mouvement DESC
+                    LIMIT 200
+                ");
+                
+                $entrees = 0;
+                $sorties = 0;
+                $ajustements = 0;
+                foreach($mouvements as $mv) {
+                    if($mv['type_mouvement'] == 'entree') $entrees++;
+                    elseif($mv['type_mouvement'] == 'sortie') $sorties++;
+                    elseif($mv['type_mouvement'] == 'ajustement') $ajustements++;
+                }
+            } catch (Exception $e) {
+                echo '<div class="alert alert-danger">';
+                echo '<strong>Erreur lors du chargement des mouvements:</strong><br>';
+                echo e($e->getMessage());
+                echo '<br><br><a href="migration_mouvements.php" class="btn btn-primary">Vérifier la table mouvements_stock</a>';
+                echo '</div>';
+                break;
             }
             ?>
             
@@ -931,7 +940,7 @@ require_once('header.php');
                                     <td>
                                         <small><?php echo date('d/m/Y H:i', strtotime($mv['date_mouvement'])); ?></small>
                                     </td>
-                                    <td><strong><?php echo e($mv['nom_produit']); ?></strong></td>
+                                    <td><strong><?php echo e($mv['nom_produit'] ?? 'Produit supprimé'); ?></strong></td>
                                     <td>
                                         <?php
                                         $badge_class = 'secondary';
@@ -951,12 +960,12 @@ require_once('header.php');
                                     </td>
                                     <td>
                                         <strong class="<?php echo $mv['quantite'] > 0 ? 'text-success' : 'text-danger'; ?>">
-                                            <?php echo ($mv['quantite'] > 0 ? '+' : '') . $mv['quantite']; ?> <?php echo e($mv['unite']); ?>
+                                            <?php echo ($mv['quantite'] > 0 ? '+' : '') . $mv['quantite']; ?> <?php echo e($mv['unite'] ?? ''); ?>
                                         </strong>
                                     </td>
-                                    <td><?php echo $mv['stock_apres']; ?> <?php echo e($mv['unite']); ?></td>
+                                    <td><?php echo $mv['stock_apres']; ?> <?php echo e($mv['unite'] ?? ''); ?></td>
                                     <td><?php echo e($mv['motif'] ?: '—'); ?></td>
-                                    <td><small><?php echo e($mv['nom_complet']); ?></small></td>
+                                    <td><small><?php echo e($mv['nom_complet'] ?? 'Utilisateur supprimé'); ?></small></td>
                                 </tr>
                                 <?php endforeach; ?>
                                 <?php endif; ?>
@@ -969,7 +978,485 @@ require_once('header.php');
             <?php
             break;
         case 'ventes':
-            echo '<div class="alert alert-info">Section Ventes - À implémenter</div>';
+            try {
+                // Filtres
+                $filter_date_from = isset($_POST['filter_date_from']) ? $_POST['filter_date_from'] : date('Y-m-01');
+                $filter_date_to = isset($_POST['filter_date_to']) ? $_POST['filter_date_to'] : date('Y-m-d');
+                $filter_client = isset($_POST['filter_client']) ? $_POST['filter_client'] : '';
+                $filter_vendeur = isset($_POST['filter_vendeur']) ? $_POST['filter_vendeur'] : '';
+                $filter_paiement = isset($_POST['filter_paiement']) ? $_POST['filter_paiement'] : '';
+                $filter_statut = isset($_POST['filter_statut']) ? $_POST['filter_statut'] : '';
+                $search_numero = isset($_POST['search_numero']) ? $_POST['search_numero'] : '';
+                
+                // Requête avec filtres
+                $query = "
+                    SELECT v.*, 
+                           c.nom_client,
+                           u.nom_complet as vendeur,
+                           COUNT(DISTINCT d.id_detail) as nb_articles
+                    FROM ventes v
+                    LEFT JOIN clients c ON v.id_client = c.id_client
+                    LEFT JOIN utilisateurs u ON v.id_vendeur = u.id_utilisateur
+                    LEFT JOIN details_vente d ON v.id_vente = d.id_vente
+                    WHERE 1=1
+                ";
+                
+                if ($filter_date_from) $query .= " AND DATE(v.date_vente) >= '" . date('Y-m-d', strtotime($filter_date_from)) . "'";
+                if ($filter_date_to) $query .= " AND DATE(v.date_vente) <= '" . date('Y-m-d', strtotime($filter_date_to)) . "'";
+                if ($filter_client) $query .= " AND v.id_client = " . intval($filter_client);
+                if ($filter_vendeur) $query .= " AND v.id_vendeur = " . intval($filter_vendeur);
+                if ($filter_paiement) $query .= " AND v.mode_paiement = '" . $filter_paiement . "'";
+                if ($filter_statut) $query .= " AND v.statut = '" . $filter_statut . "'";
+                if ($search_numero) $query .= " AND v.numero_facture LIKE '%". str_replace("'", "''", $search_numero) ."%'";
+                
+                $query .= " GROUP BY v.id_vente ORDER BY v.date_vente DESC LIMIT 500";
+                
+                $ventes = db_fetch_all($query);
+                
+                // Statistiques globales
+                $total_ventes = count($ventes);
+                $ca_total = 0;
+                $ca_ht_total = 0;
+                $tva_total = 0;
+                $remise_total = 0;
+                $ca_jour = 0;
+                $aujourd_hui = date('Y-m-d');
+                $stats_vendeurs = [];
+                $stats_modes_paiement = [];
+                
+                foreach($ventes as $vente) {
+                    $ca_total += $vente['montant_total'];
+                    $ca_ht_total += $vente['montant_ht'];
+                    $tva_total += $vente['montant_tva'];
+                    $remise_total += $vente['montant_remise'];
+                    
+                    if (date('Y-m-d', strtotime($vente['date_vente'])) == $aujourd_hui) {
+                        $ca_jour += $vente['montant_total'];
+                    }
+                    
+                    $vendeur = $vente['vendeur'] ?: 'Non attribué';
+                    if (!isset($stats_vendeurs[$vendeur])) {
+                        $stats_vendeurs[$vendeur] = ['count' => 0, 'montant' => 0];
+                    }
+                    $stats_vendeurs[$vendeur]['count']++;
+                    $stats_vendeurs[$vendeur]['montant'] += $vente['montant_total'];
+                    
+                    $mode = $vente['mode_paiement'];
+                    if (!isset($stats_modes_paiement[$mode])) {
+                        $stats_modes_paiement[$mode] = ['count' => 0, 'montant' => 0];
+                    }
+                    $stats_modes_paiement[$mode]['count']++;
+                    $stats_modes_paiement[$mode]['montant'] += $vente['montant_total'];
+                }
+                
+                // Listes pour filtres
+                $clients = db_fetch_all("SELECT id_client, nom_client FROM clients ORDER BY nom_client");
+                $vendeurs = db_fetch_all("SELECT id_utilisateur, nom_complet FROM utilisateurs WHERE niveau_acces = " . NIVEAU_VENDEUR . " ORDER BY nom_complet");
+                
+            } catch (Exception $e) {
+                echo '<div class="alert alert-danger">';
+                echo '<strong>Erreur lors du chargement des ventes:</strong><br>';
+                echo e($e->getMessage());
+                echo '</div>';
+                break;
+            }
+            ?>
+            
+            <!-- Filtres -->
+            <div class="card list-card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">🔍 Filtres</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="row g-3 align-items-end">
+                        <div class="col-md-2">
+                            <label class="form-label">Numéro facture</label>
+                            <input type="text" class="form-control" name="search_numero" 
+                                   value="<?php echo e($search_numero); ?>" placeholder="Ex: FAC-001">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Du</label>
+                            <input type="date" class="form-control" name="filter_date_from" 
+                                   value="<?php echo e($filter_date_from); ?>">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Au</label>
+                            <input type="date" class="form-control" name="filter_date_to" 
+                                   value="<?php echo e($filter_date_to); ?>">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Client</label>
+                            <select class="form-select" name="filter_client">
+                                <option value="">Tous</option>
+                                <?php foreach($clients as $client): ?>
+                                <option value="<?php echo $client['id_client']; ?>" 
+                                    <?php echo $filter_client == $client['id_client'] ? 'selected' : ''; ?>>
+                                    <?php echo e($client['nom_client']); ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Vendeur</label>
+                            <select class="form-select" name="filter_vendeur">
+                                <option value="">Tous</option>
+                                <?php foreach($vendeurs as $v): ?>
+                                <option value="<?php echo $v['id_utilisateur']; ?>" 
+                                    <?php echo $filter_vendeur == $v['id_utilisateur'] ? 'selected' : ''; ?>>
+                                    <?php echo e($v['nom_complet']); ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Paiement</label>
+                            <select class="form-select" name="filter_paiement">
+                                <option value="">Tous</option>
+                                <option value="especes" <?php echo $filter_paiement == 'especes' ? 'selected' : ''; ?>>Espèces</option>
+                                <option value="carte" <?php echo $filter_paiement == 'carte' ? 'selected' : ''; ?>>Carte</option>
+                                <option value="mobile_money" <?php echo $filter_paiement == 'mobile_money' ? 'selected' : ''; ?>>Mobile Money</option>
+                                <option value="cheque" <?php echo $filter_paiement == 'cheque' ? 'selected' : ''; ?>>Chèque</option>
+                                <option value="credit" <?php echo $filter_paiement == 'credit' ? 'selected' : ''; ?>>Crédit</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Statut</label>
+                            <select class="form-select" name="filter_statut">
+                                <option value="">Tous</option>
+                                <option value="validee" <?php echo $filter_statut == 'validee' ? 'selected' : ''; ?>>Validée</option>
+                                <option value="en_cours" <?php echo $filter_statut == 'en_cours' ? 'selected' : ''; ?>>En cours</option>
+                                <option value="annulee" <?php echo $filter_statut == 'annulee' ? 'selected' : ''; ?>>Annulée</option>
+                            </select>
+                        </div>
+                        <div class="col-md-auto">
+                            <button type="submit" class="btn btn-primary">Filtrer</button>
+                            <a href="listes.php?page=ventes" class="btn btn-secondary">Réinitialiser</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Statistiques principales -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="card-body d-flex align-items-center">
+                            <div class="me-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                    <line x1="1" y1="10" x2="23" y2="10"></line>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="text-muted" data-bs-toggle="tooltip" title="Nombre total de ventes correspondant aux filtres">Ventes</div>
+                                <h3 class="mb-0"><?php echo $total_ventes; ?></h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="card-body d-flex align-items-center">
+                            <div class="me-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#28a745" stroke-width="2">
+                                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="text-muted" data-bs-toggle="tooltip" title="Chiffre d'affaires TTC du jour">CA Aujourd'hui</div>
+                                <h3 class="mb-0"><?php echo format_montant($ca_jour, $devise); ?></h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="card-body d-flex align-items-center">
+                            <div class="me-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#17a2b8" stroke-width="2">
+                                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                    <polyline points="17 6 23 6 23 12"></polyline>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="text-muted" data-bs-toggle="tooltip" title="Chiffre d'affaires TTC total (avec filtres)">CA Total TTC</div>
+                                <h3 class="mb-0"><?php echo format_montant($ca_total, $devise); ?></h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="card-body d-flex align-items-center">
+                            <div class="me-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ffc107" stroke-width="2">
+                                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="text-muted" data-bs-toggle="tooltip" title="Total des remises accordées">Remises</div>
+                                <h3 class="mb-0"><?php echo format_montant($remise_total, $devise); ?></h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistiques détaillées -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card list-card">
+                        <div class="card-header">
+                            <h6 class="mb-0">💼 CA par Vendeur</h6>
+                        </div>
+                        <div class="card-body">
+                            <?php if (empty($stats_vendeurs)): ?>
+                            <p class="text-muted">Aucune vente</p>
+                            <?php else: ?>
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr><th>Vendeur</th><th class="text-end">Ventes</th><th class="text-end">Montant</th></tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach($stats_vendeurs as $nom => $stats): ?>
+                                    <tr>
+                                        <td><?php echo e($nom); ?></td>
+                                        <td class="text-end"><span class="badge bg-secondary"><?php echo $stats['count']; ?></span></td>
+                                        <td class="text-end"><strong><?php echo format_montant($stats['montant'], $devise); ?></strong></td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card list-card">
+                        <div class="card-header">
+                            <h6 class="mb-0">💳 CA par Mode de Paiement</h6>
+                        </div>
+                        <div class="card-body">
+                            <?php if (empty($stats_modes_paiement)): ?>
+                            <p class="text-muted">Aucune vente</p>
+                            <?php else: ?>
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr><th>Mode</th><th class="text-end">Ventes</th><th class="text-end">Montant</th></tr>
+                                </thead>
+                                <tbody>
+                                    <?php 
+                                    $mode_labels = ['especes' => 'Espèces', 'carte' => 'Carte', 'mobile_money' => 'Mobile Money', 'cheque' => 'Chèque', 'credit' => 'Crédit'];
+                                    foreach($stats_modes_paiement as $mode => $stats): 
+                                    ?>
+                                    <tr>
+                                        <td><?php echo $mode_labels[$mode] ?? $mode; ?></td>
+                                        <td class="text-end"><span class="badge bg-secondary"><?php echo $stats['count']; ?></span></td>
+                                        <td class="text-end"><strong><?php echo format_montant($stats['montant'], $devise); ?></strong></td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Détails financiers -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card list-card">
+                        <div class="card-header">
+                            <h6 class="mb-0">📊 Résumé Financier</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-3">
+                                    <p class="text-muted small">Montant HT</p>
+                                    <h5><?php echo format_montant($ca_ht_total, $devise); ?></h5>
+                                </div>
+                                <div class="col-md-3">
+                                    <p class="text-muted small">TVA (16%)</p>
+                                    <h5><?php echo format_montant($tva_total, $devise); ?></h5>
+                                </div>
+                                <div class="col-md-3">
+                                    <p class="text-muted small">Remises</p>
+                                    <h5><?php echo format_montant($remise_total, $devise); ?></h5>
+                                </div>
+                                <div class="col-md-3">
+                                    <p class="text-muted small">Montant Moyen</p>
+                                    <h5><?php echo format_montant($total_ventes > 0 ? $ca_total / $total_ventes : 0, $devise); ?></h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tableau des ventes -->
+            <div class="card list-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">📋 Détail des Ventes (<?php echo $total_ventes; ?> résultats)</h5>
+                    <div>
+                        <button type="button" class="btn btn-outline-success btn-sm me-2" onclick="exportVentesExcel()">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            Excel
+                        </button>
+                        <a href="vente_professionnel.php" class="btn btn-success btn-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Nouvelle Vente
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover card-table">
+                            <thead>
+                                <tr>
+                                    <th data-bs-toggle="tooltip" title="Numéro de facture unique">N° Facture</th>
+                                    <th data-bs-toggle="tooltip" title="Date et heure de la vente">Date</th>
+                                    <th data-bs-toggle="tooltip" title="Nom du client">Client</th>
+                                    <th data-bs-toggle="tooltip" title="Nombre d'articles vendus">Articles</th>
+                                    <th data-bs-toggle="tooltip" title="Montant HT">HT</th>
+                                    <th data-bs-toggle="tooltip" title="TVA (16%)">TVA</th>
+                                    <th data-bs-toggle="tooltip" title="Remise accordée">Remise</th>
+                                    <th data-bs-toggle="tooltip" title="Montant total TTC">Montant TTC</th>
+                                    <th data-bs-toggle="tooltip" title="Mode de paiement utilisé">Paiement</th>
+                                    <th data-bs-toggle="tooltip" title="Statut de la vente">Statut</th>
+                                    <th data-bs-toggle="tooltip" title="Vendeur ayant effectué la vente">Vendeur</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (empty($ventes)): ?>
+                                <tr>
+                                    <td colspan="12" class="text-center text-muted">Aucune vente correspondant aux filtres</td>
+                                </tr>
+                                <?php else: ?>
+                                <?php foreach($ventes as $vente): ?>
+                                <tr>
+                                    <td><strong><?php echo e($vente['numero_facture']); ?></strong></td>
+                                    <td><small><?php echo date('d/m/Y H:i', strtotime($vente['date_vente'])); ?></small></td>
+                                    <td><?php echo e($vente['nom_client'] ?: 'Vente comptoir'); ?></td>
+                                    <td><span class="badge bg-info"><?php echo $vente['nb_articles']; ?></span></td>
+                                    <td><?php echo format_montant($vente['montant_ht'], $devise); ?></td>
+                                    <td><?php echo format_montant($vente['montant_tva'], $devise); ?></td>
+                                    <td>
+                                        <?php if ($vente['montant_remise'] > 0): ?>
+                                        <span class="badge bg-warning text-dark"><?php echo format_montant($vente['montant_remise'], $devise); ?></span>
+                                        <?php else: ?>
+                                        <span class="text-muted">-</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td><strong><?php echo format_montant($vente['montant_total'], $devise); ?></strong></td>
+                                    <td>
+                                        <?php
+                                        $mode_badges = [
+                                            'especes' => 'success',
+                                            'carte' => 'primary',
+                                            'mobile_money' => 'warning',
+                                            'cheque' => 'info',
+                                            'credit' => 'secondary'
+                                        ];
+                                        $mode_labels = [
+                                            'especes' => 'Espèces',
+                                            'carte' => 'Carte',
+                                            'mobile_money' => 'Mobile Money',
+                                            'cheque' => 'Chèque',
+                                            'credit' => 'Crédit'
+                                        ];
+                                        $badge_class = $mode_badges[$vente['mode_paiement']] ?? 'secondary';
+                                        $mode_label = $mode_labels[$vente['mode_paiement']] ?? $vente['mode_paiement'];
+                                        ?>
+                                        <span class="badge bg-<?php echo $badge_class; ?>"><?php echo $mode_label; ?></span>
+                                    </td>
+                                    <td>
+                                        <?php
+                                        $statut_badges = [
+                                            'validee' => 'success',
+                                            'en_cours' => 'warning',
+                                            'annulee' => 'danger'
+                                        ];
+                                        $statut_labels = [
+                                            'validee' => 'Validée',
+                                            'en_cours' => 'En cours',
+                                            'annulee' => 'Annulée'
+                                        ];
+                                        $badge_class = $statut_badges[$vente['statut']] ?? 'secondary';
+                                        $statut_label = $statut_labels[$vente['statut']] ?? $vente['statut'];
+                                        ?>
+                                        <span class="badge bg-<?php echo $badge_class; ?>"><?php echo $statut_label; ?></span>
+                                    </td>
+                                    <td><small><?php echo e($vente['vendeur']); ?></small></td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-outline-info btn-view-vente" 
+                                                    data-id="<?php echo $vente['id_vente']; ?>"
+                                                    data-bs-toggle="tooltip" title="Voir détails complets">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                    <circle cx="12" cy="12" r="3"></circle>
+                                                </svg>
+                                            </button>
+                                            <a href="facture_impression.php?id=<?php echo $vente['id_vente']; ?>" 
+                                               target="_blank"
+                                               class="btn btn-outline-primary"
+                                               data-bs-toggle="tooltip" title="Imprimer facture">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                                                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                                                    <rect x="6" y="14" width="12" height="8"></rect>
+                                                </svg>
+                                            </a>
+                                            <?php if ($vente['statut'] == 'validee'): ?>
+                                            <button type="button" class="btn btn-outline-danger btn-cancel-vente" 
+                                                    data-id="<?php echo $vente['id_vente']; ?>"
+                                                    data-numero="<?php echo e($vente['numero_facture']); ?>"
+                                                    data-bs-toggle="tooltip" title="Annuler la vente (Admin seulement)">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <circle cx="12" cy="12" r="10"></circle>
+                                                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                                                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                                                </svg>
+                                            </button>
+                                            <?php endif; ?>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal voir détails -->
+            <div class="modal fade" id="venteDetailsModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Détails de la Vente</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body" id="venteDetailsContent">
+                            <p class="text-center"><spinner class="spinner-border spinner-border-sm"></spinner> Chargement...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <?php
             break;
     }
     ?>
@@ -1090,7 +1577,7 @@ function editProduct(product) {
     document.getElementById('product_name').value = product.nom_produit;
     document.getElementById('product_barcode').value = product.code_barre || '';
     document.getElementById('product_category').value = product.id_categorie;
-    document.getElementById('product_unit').value = product.unite;
+    document.getElementById('product_unit').value = product.unite_mesure || product.unite || 'pièce';
     document.getElementById('product_purchase_price').value = product.prix_achat;
     document.getElementById('product_sale_price').value = product.prix_vente;
     document.getElementById('product_stock').value = product.quantite_stock;
@@ -1521,6 +2008,131 @@ function saveCategory() {
         }
     })
     .catch(err => { console.error(err); alert('Erreur réseau'); });
+}
+
+// ===== GESTION VENTES =====
+document.querySelectorAll('.btn-cancel-vente').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const id = this.getAttribute('data-id');
+        const numero = this.getAttribute('data-numero');
+        cancelVente(id, numero);
+    });
+});
+
+// ===== GESTION VENTES =====
+document.addEventListener('DOMContentLoaded', function() {
+    // Boutons voir détails vente
+    document.querySelectorAll('.btn-view-vente').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            viewVenteDetails(id);
+        });
+    });
+    
+    // Boutons annuler vente
+    document.querySelectorAll('.btn-cancel-vente').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const numero = this.getAttribute('data-numero');
+            cancelVente(id, numero);
+        });
+    });
+});
+
+function viewVenteDetails(id) {
+    const modal = new bootstrap.Modal(document.getElementById('venteDetailsModal'));
+    const contentDiv = document.getElementById('venteDetailsContent');
+    
+    contentDiv.innerHTML = '<p class="text-center"><div class="spinner-border spinner-border-sm"></div> Chargement...</p>';
+    
+    fetch('ajax/get_vente_details.php?id=' + id)
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                contentDiv.innerHTML = data.html;
+            } else {
+                contentDiv.innerHTML = '<div class="alert alert-danger">' + data.message + '</div>';
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            contentDiv.innerHTML = '<div class="alert alert-danger">Erreur lors du chargement</div>';
+        });
+    
+    modal.show();
+}
+
+function exportVentesExcel() {
+    // Récupérer les filtres actuels
+    const formData = new FormData();
+    const inputs = document.querySelectorAll('form input, form select');
+    inputs.forEach(input => {
+        if (input.name && input.value) {
+            formData.append(input.name, input.value);
+        }
+    });
+    
+    // Créer formulaire de soumission POST
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = 'ajax/export_ventes.php';
+    
+    for (let [key, value] of formData.entries()) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = value;
+        form.appendChild(input);
+    }
+    
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+}
+
+function cancelVente(id, numero) {
+    if (typeof showConfirmModal === 'function') {
+        showConfirmModal({
+            title: 'Confirmer l\'annulation',
+            message: `Êtes-vous sûr de vouloir annuler la vente ${numero} ? Cette action est irréversible et le stock sera remis à jour.`,
+            onConfirm: () => {
+                fetch('ajax/valider_vente.php', {
+                    method: 'POST',
+                    body: new URLSearchParams({
+                        action: 'cancel_vente',
+                        id_vente: id
+                    })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (typeof showAlertModal === 'function') {
+                        showAlertModal({
+                            title: data.success ? 'Succès' : 'Erreur',
+                            message: data.message,
+                            type: data.success ? 'success' : 'error',
+                            onClose: () => { if (data.success) location.reload(); }
+                        });
+                    } else {
+                        alert(data.message);
+                        if (data.success) location.reload();
+                    }
+                });
+            }
+        });
+    } else if (confirm(`Annuler la vente ${numero} ? Le stock sera remis à jour.`)) {
+        fetch('ajax/valider_vente.php', {
+            method: 'POST',
+            body: new URLSearchParams({
+                action: 'cancel_vente',
+                id_vente: id
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            alert(data.message);
+            if (data.success) location.reload();
+        });
+    }
 }
 
 </script>
