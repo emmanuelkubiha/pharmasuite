@@ -1,18 +1,14 @@
 <?php
 /**
  * PAGE GESTION DES UTILISATEURS - STORE SUITE
- * Gestion des utilisateurs (Admin uniquement)
+ * Admin uniquement
  */
 require_once 'protection_pages.php';
-require_admin(); // Vérifier que c'est un admin
+require_admin();
 
 $page_title = 'Gestion des Utilisateurs';
 
-// Récupérer tous les utilisateurs
-$utilisateurs = db_fetch_all("
-    SELECT * FROM utilisateurs 
-    ORDER BY date_creation DESC
-");
+$utilisateurs = db_fetch_all('SELECT * FROM utilisateurs ORDER BY date_creation DESC');
 
 include 'header.php';
 ?>
@@ -106,11 +102,11 @@ include 'header.php';
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="badge bg-blue-lt"><?php echo e($user['login']); ?></span>
+                                    <code class="text-dark bg-light px-2 py-1 rounded"><?php echo e($user['login']); ?></code>
                                 </td>
                                 <td>
-                                    <?php if ($user['est_admin'] == 1): ?>
-                                    <span class="badge bg-red">
+                                    <?php if ($user['niveau_acces'] == 1): ?>
+                                    <span class="badge" style="background: linear-gradient(135deg, <?php echo $couleur_primaire; ?>, <?php echo $couleur_secondaire; ?>); color: white;">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
                                             <path d="M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5"/>
@@ -118,7 +114,7 @@ include 'header.php';
                                         Administrateur
                                     </span>
                                     <?php else: ?>
-                                    <span class="badge bg-green">
+                                    <span class="badge bg-success text-white">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
                                             <circle cx="9" cy="7" r="4"/>
@@ -227,7 +223,7 @@ include 'header.php';
                 <div class="modal-body">
                     <input type="hidden" id="userId" name="id_utilisateur">
                     <input type="hidden" id="isEdit" name="is_edit" value="0">
-                    
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">
@@ -335,70 +331,68 @@ include 'header.php';
 document.getElementById('searchUser').addEventListener('input', function(e) {
     const search = e.target.value.toLowerCase();
     const rows = document.querySelectorAll('#usersList tr');
-    
+
     rows.forEach(row => {
         const text = row.textContent.toLowerCase();
         row.style.display = text.includes(search) ? '' : 'none';
     });
 });
 
-// Créer/Modifier utilisateur
 function saveUser(e) {
     e.preventDefault();
-    
+
     const formData = new FormData(e.target);
     const isEdit = document.getElementById('isEdit').value === '1';
-    
-    // Validation mot de passe si création
+
     if (!isEdit && !formData.get('mot_de_passe')) {
-        showAlertModal({
-            title: 'Champ obligatoire',
-            message: 'Le mot de passe est obligatoire pour un nouvel utilisateur',
-            type: 'warning',
-            icon: 'warning'
-        });
+        alert('Le mot de passe est obligatoire pour un nouvel utilisateur');
         return;
     }
-    
-    fetch('ajax/utilisateurs.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlertModal({
-                title: 'Succès',
-                message: data.message,
-                type: 'success',
-                icon: 'success'
-            }).then(() => location.reload());
-        } else {
-            showAlertModal({
-                title: 'Erreur',
-                message: data.message,
-                type: 'danger',
-                icon: 'danger'
-            });
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showAlertModal({
-            title: 'Erreur',
-            message: 'Erreur lors de l\'enregistrement: ' + error,
-            type: 'danger',
-            icon: 'danger'
+
+    fetch('ajax/utilisateurs.php', { method: 'POST', body: formData })
+        .then(async response => {
+            try {
+                return await response.json();
+            } catch (err) {
+                return { success: false, message: 'Réponse serveur invalide' };
+            }
+        })
+        .then(data => {
+            const modalElement = document.getElementById('modalAddUser');
+            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+
+            const showResult = () => {
+                if (data.success) {
+                    alert(data.message || 'Opération réussie');
+                    location.reload();
+                } else {
+                    alert(data.message || 'Une erreur est survenue');
+                }
+            };
+
+            if (modalInstance && modalElement.classList.contains('show')) {
+                modalElement.addEventListener('hidden.bs.modal', () => {
+                    setTimeout(showResult, 50);
+                }, { once: true });
+                modalInstance.hide();
+            } else {
+                showResult();
+            }
+        })
+        .catch(error => {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalAddUser'));
+            if (modal) modal.hide();
+
+            alert('Erreur lors de l\'enregistrement: ' + error);
         });
-    });
 }
 
-// Éditer utilisateur
 function editUser(id) {
     fetch('ajax/utilisateurs.php?action=get&id=' + id)
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) return;
+
             const user = data.user;
             document.getElementById('userId').value = user.id_utilisateur;
             document.getElementById('isEdit').value = '1';
@@ -407,105 +401,60 @@ function editUser(id) {
             document.getElementById('userLogin').value = user.login;
             document.getElementById('userPassword').value = '';
             document.getElementById('userPassword').removeAttribute('required');
-            document.querySelector(`input[name="est_admin"][value="${user.est_admin}"]`).checked = true;
-            
+
+            const isAdminValue = (user.niveau_acces == 1) ? '1' : '0';
+            document.querySelector('input[name="est_admin"][value="' + isAdminValue + '"]').checked = true;
+
             document.getElementById('modalTitleText').textContent = 'Modifier l\'utilisateur';
             document.getElementById('btnSubmitText').textContent = 'Mettre à jour';
             document.getElementById('passwordRequired').style.display = 'none';
             document.getElementById('passwordHint').style.display = 'block';
-            
+
             const modal = new bootstrap.Modal(document.getElementById('modalAddUser'));
             modal.show();
-        }
-    });
+        });
 }
 
-// Activer/Désactiver utilisateur
 function toggleUserStatus(id, status) {
     const action = status === 1 ? 'activer' : 'désactiver';
-    
-    showConfirmModal({
-        title: `${action.charAt(0).toUpperCase() + action.slice(1)} l'utilisateur`,
-        message: `Voulez-vous vraiment ${action} cet utilisateur ?`,
-        icon: 'warning',
-        type: 'primary',
-        confirmText: 'Oui, confirmer',
-        cancelText: 'Annuler'
-    }).then(confirmed => {
-        if (!confirmed) return;
-        
-        const formData = new FormData();
-        formData.append('action', 'toggle_status');
-        formData.append('id_utilisateur', id);
-        formData.append('est_actif', status);
-        
-        fetch('ajax/utilisateurs.php', {
-            method: 'POST',
-            body: formData
-        })
+    if (!confirm(`Voulez-vous vraiment ${action} cet utilisateur ?`)) return;
+
+    const formData = new FormData();
+    formData.append('action', 'toggle_status');
+    formData.append('id_utilisateur', id);
+    formData.append('est_actif', status);
+
+    fetch('ajax/utilisateurs.php', { method: 'POST', body: formData })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                showAlertModal({
-                    title: 'Succès',
-                    message: data.message || 'Opération réussie',
-                    type: 'success',
-                    icon: 'success'
-                }).then(() => location.reload());
+                alert(data.message || 'Opération réussie');
+                location.reload();
             } else {
-                showAlertModal({
-                    title: 'Erreur',
-                    message: data.message,
-                    type: 'danger',
-                    icon: 'danger'
-                });
+                alert(data.message || 'Une erreur est survenue');
             }
         });
-    });
 }
 
-// Supprimer utilisateur
 function deleteUser(id) {
-    showConfirmModal({
-        title: '⚠️ Supprimer l\'utilisateur',
-        message: 'Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.',
-        icon: 'warning',
-        type: 'danger',
-        confirmText: 'Oui, supprimer',
-        cancelText: 'Annuler'
-    }).then(confirmed => {
-        if (!confirmed) return;
-        
-        const formData = new FormData();
-        formData.append('action', 'delete');
-        formData.append('id_utilisateur', id);
-        
-        fetch('ajax/utilisateurs.php', {
-            method: 'POST',
-            body: formData
-        })
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.')) return;
+
+    const formData = new FormData();
+    formData.append('action', 'delete');
+    formData.append('id_utilisateur', id);
+
+    fetch('ajax/utilisateurs.php', { method: 'POST', body: formData })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                showAlertModal({
-                    title: 'Succès',
-                    message: data.message,
-                    type: 'success',
-                    icon: 'success'
-                }).then(() => location.reload());
+                alert(data.message || 'Opération réussie');
+                location.reload();
             } else {
-                showAlertModal({
-                    title: 'Erreur',
-                    message: data.message,
-                    type: 'danger',
-                    icon: 'danger'
-                });
+                alert(data.message || 'Une erreur est survenue');
             }
         });
-    });
 }
 
-// Réinitialiser le formulaire à la fermeture du modal
 document.getElementById('modalAddUser').addEventListener('hidden.bs.modal', function () {
     document.getElementById('formUser').reset();
     document.getElementById('userId').value = '';
@@ -517,7 +466,6 @@ document.getElementById('modalAddUser').addEventListener('hidden.bs.modal', func
     document.getElementById('passwordHint').style.display = 'none';
 });
 
-// Initialiser les tooltips
 document.addEventListener('DOMContentLoaded', function() {
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.map(function (tooltipTriggerEl) {

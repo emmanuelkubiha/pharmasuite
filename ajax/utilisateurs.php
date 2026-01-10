@@ -37,18 +37,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 // Actions POST
 $response = ['success' => false, 'message' => ''];
 
+// Logging pour debug
+error_log("POST Data: " . print_r($_POST, true));
+
 try {
     $action = $_POST['action'] ?? '';
     $isEdit = ($_POST['is_edit'] ?? '0') === '1';
     
+    error_log("Action: $action, IsEdit: " . ($isEdit ? 'YES' : 'NO'));
+    
     // Création ou modification d'utilisateur
-    if (!$action || !$isEdit) {
+    if (empty($action) && !$isEdit) {
         // CRÉATION D'UN NOUVEL UTILISATEUR
+        error_log("Entering CREATION block");
         $nom = trim($_POST['nom_complet'] ?? '');
         $login = trim($_POST['login'] ?? '');
         $password = $_POST['mot_de_passe'] ?? '';
         $email = trim($_POST['email'] ?? '');
-        $est_admin = intval($_POST['est_admin'] ?? 0);
+        $est_admin_input = intval($_POST['est_admin'] ?? 0);
+        // Convertir: est_admin=1 => niveau_acces=1 (Admin), est_admin=0 => niveau_acces=2 (Vendeur)
+        $niveau_acces = ($est_admin_input == 1) ? 1 : 2;
         
         if (empty($nom) || empty($login) || empty($password)) {
             throw new Exception('Nom, identifiant et mot de passe sont obligatoires');
@@ -66,9 +74,9 @@ try {
         
         $password_hash = password_hash($password, PASSWORD_DEFAULT);
         
-        $sql = "INSERT INTO utilisateurs (nom_complet, login, password_hash, email, est_admin, est_actif, date_creation) 
+        $sql = "INSERT INTO utilisateurs (nom_complet, login, mot_de_passe, email, niveau_acces, est_actif, date_creation) 
                 VALUES (?, ?, ?, ?, ?, 1, NOW())";
-        db_execute($sql, [$nom, $login, $password_hash, $email, $est_admin]);
+        db_execute($sql, [$nom, $login, $password_hash, $email, $niveau_acces]);
         
         $response['success'] = true;
         $response['message'] = 'Utilisateur créé avec succès';
@@ -79,7 +87,9 @@ try {
         $nom = trim($_POST['nom_complet'] ?? '');
         $login = trim($_POST['login'] ?? '');
         $email = trim($_POST['email'] ?? '');
-        $est_admin = intval($_POST['est_admin'] ?? 0);
+        $est_admin_input = intval($_POST['est_admin'] ?? 0);
+        // Convertir: est_admin=1 => niveau_acces=1 (Admin), est_admin=0 => niveau_acces=2 (Vendeur)
+        $niveau_acces = ($est_admin_input == 1) ? 1 : 2;
         $password = $_POST['mot_de_passe'] ?? '';
         
         if (!$id_utilisateur) {
@@ -102,14 +112,14 @@ try {
                 throw new Exception('Le mot de passe doit contenir au moins 6 caractères');
             }
             $password_hash = password_hash($password, PASSWORD_DEFAULT);
-            $sql = "UPDATE utilisateurs SET nom_complet = ?, login = ?, password_hash = ?, email = ?, est_admin = ? 
+            $sql = "UPDATE utilisateurs SET nom_complet = ?, login = ?, mot_de_passe = ?, email = ?, niveau_acces = ? 
                     WHERE id_utilisateur = ?";
-            db_execute($sql, [$nom, $login, $password_hash, $email, $est_admin, $id_utilisateur]);
+            db_execute($sql, [$nom, $login, $password_hash, $email, $niveau_acces, $id_utilisateur]);
         } else {
             // Mise à jour sans changer le mot de passe
-            $sql = "UPDATE utilisateurs SET nom_complet = ?, login = ?, email = ?, est_admin = ? 
+            $sql = "UPDATE utilisateurs SET nom_complet = ?, login = ?, email = ?, niveau_acces = ? 
                     WHERE id_utilisateur = ?";
-            db_execute($sql, [$nom, $login, $email, $est_admin, $id_utilisateur]);
+            db_execute($sql, [$nom, $login, $email, $niveau_acces, $id_utilisateur]);
         }
         
         $response['success'] = true;

@@ -15,7 +15,7 @@ const modalStyles = `
     height: 100%;
     background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(4px);
-    z-index: 10000;
+    z-index: 2147483647; /* Toujours au-dessus de Bootstrap */
     animation: fadeIn 0.2s ease;
 }
 
@@ -69,6 +69,11 @@ const modalStyles = `
 
 .modern-modal-icon.success {
     background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+}
+
+.modern-modal-icon.error {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
     color: white;
 }
 
@@ -139,6 +144,11 @@ const modalStyles = `
 
 .modern-modal-btn-success {
     background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+}
+
+.modern-modal-btn-error {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
     color: white;
 }
 
@@ -214,6 +224,12 @@ window.showConfirmModal = function(options = {}) {
 
         document.body.insertAdjacentHTML('beforeend', modalHTML);
         const modalElement = document.getElementById(modalId);
+        // Nettoyer les backdrops Bootstrap pour éviter les conflits d'empilement
+        try {
+            document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('padding-right');
+        } catch (e) {}
         
         // Afficher le modal
         setTimeout(() => modalElement.classList.add('active'), 10);
@@ -250,6 +266,7 @@ window.showAlertModal = function(options = {}) {
 
         const icons = {
             success: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" fill="none"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10"/></svg>',
+            error: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" fill="none"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
             danger: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" fill="none"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
             warning: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" fill="none"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 9v2m0 4v.01"/><path d="M5 19h14a2 2 0 0 0 1.84 -2.75l-7.1 -12.25a2 2 0 0 0 -3.5 0l-7.1 12.25a2 2 0 0 0 1.75 2.75"/></svg>',
             info: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" fill="none"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12.01" y2="8"/><polyline points="11 12 12 12 12 16 13 16"/></svg>'
@@ -277,6 +294,12 @@ window.showAlertModal = function(options = {}) {
 
         document.body.insertAdjacentHTML('beforeend', modalHTML);
         const modalElement = document.getElementById(modalId);
+        // Nettoyer les backdrops Bootstrap pour éviter les conflits d'empilement
+        try {
+            document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('padding-right');
+        } catch (e) {}
         
         setTimeout(() => modalElement.classList.add('active'), 10);
 

@@ -46,7 +46,7 @@ $ventes_mois = db_fetch_one("
 // Top vendeurs du mois
 $top_vendeurs = db_fetch_all("
     SELECT 
-        u.nom_utilisateur,
+        u.nom_complet,
         COUNT(v.id_vente) as nombre_ventes,
         SUM(v.montant_total) as montant_total
     FROM ventes v
@@ -302,7 +302,7 @@ include 'header.php';
                                     <?php echo $index + 1; ?>
                                 </span>
                                 <div class="flex-fill">
-                                    <strong><?php echo e($vendeur['nom_utilisateur']); ?></strong>
+                                    <strong><?php echo e($vendeur['nom_complet']); ?></strong>
                                     <div class="text-muted small"><?php echo $vendeur['nombre_ventes']; ?> ventes</div>
                                 </div>
                                 <div class="text-end">
