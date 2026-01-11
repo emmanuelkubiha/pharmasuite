@@ -18,9 +18,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $devise = trim($_POST['devise'] ?? '');
         $couleur_primaire = trim($_POST['couleur_primaire'] ?? '');
         $couleur_secondaire = trim($_POST['couleur_secondaire'] ?? '');
-        $adresse_boutique = trim($_POST['adresse_boutique'] ?? '');
-        $telephone_boutique = trim($_POST['telephone_boutique'] ?? '');
-        $email_boutique = trim($_POST['email_boutique'] ?? '');
+        $adresse = trim($_POST['adresse_boutique'] ?? '');
+        $telephone = trim($_POST['telephone_boutique'] ?? '');
+        $email = trim($_POST['email_boutique'] ?? '');
         
         if (empty($nom_boutique)) {
             throw new Exception('Le nom de la boutique est obligatoire');
@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         // Traitement du logo (si présent)
-        $logo_boutique = $config['logo_boutique'] ?? '';
+        $logo = $config['logo'] ?? '';
         if (!empty($_POST['logo_cropped_data'])) {
             // Décoder l'image base64
             $logoData = $_POST['logo_cropped_data'];
@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 // Sauvegarder le fichier
                 if (file_put_contents($logoPath, $logoData)) {
-                    $logo_boutique = $logoFilename;
+                    $logo = 'uploads/logos/' . $logoFilename;
                 }
             }
         }
@@ -61,10 +61,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 devise = ?,
                 couleur_primaire = ?,
                 couleur_secondaire = ?,
-                adresse_boutique = ?,
-                telephone_boutique = ?,
-                email_boutique = ?,
-                logo_boutique = ?
+                adresse = ?,
+                telephone = ?,
+                email = ?,
+                logo = ?
                 WHERE id_config = 1";
         
         db_execute($sql, [
@@ -72,10 +72,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $devise,
             $couleur_primaire,
             $couleur_secondaire,
-            $adresse_boutique,
-            $telephone_boutique,
-            $email_boutique,
-            $logo_boutique
+            $adresse,
+            $telephone,
+            $email,
+            $logo
         ]);
         
         $success = 'Paramètres mis à jour avec succès. Actualisez la page pour voir les changements.';
@@ -379,13 +379,13 @@ include 'header.php';
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <?php 
-                                $logo_actuel = isset($config['logo_boutique']) ? $config['logo_boutique'] : '';
-                                $logo_existe = !empty($logo_actuel) && file_exists(__DIR__ . '/uploads/logos/' . $logo_actuel);
+                                $logo_actuel = isset($config['logo']) ? $config['logo'] : '';
+                                $logo_existe = !empty($logo_actuel) && file_exists(__DIR__ . '/' . $logo_actuel);
                                 ?>
                                 <?php if ($logo_existe): ?>
                                 <div class="card">
                                     <div class="card-body text-center p-4">
-                                        <img src="<?php echo BASE_URL . 'uploads/logos/' . e($logo_actuel); ?>" alt="Logo actuel" class="img-fluid mb-2" style="max-height: 100px;">
+                                        <img src="<?php echo BASE_URL . e($logo_actuel); ?>" alt="Logo actuel" class="img-fluid mb-2" style="max-height: 100px;">
                                         <div class="text-muted small">Logo actuel</div>
                                     </div>
                                 </div>

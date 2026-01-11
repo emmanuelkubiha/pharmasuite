@@ -89,13 +89,13 @@ try {
             // Réinitialiser la configuration
             db_execute("UPDATE configuration SET 
                 nom_boutique = 'Ma Boutique',
-                adresse_boutique = '',
-                telephone_boutique = '',
-                email_boutique = '',
+                adresse = '',
+                telephone = '',
+                email = '',
                 devise = 'USD',
                 couleur_primaire = '#0066cc',
                 couleur_secondaire = '#004d99',
-                logo_boutique = NULL
+                logo = NULL
                 WHERE id_config = 1");
             
             // Récréer le client par défaut

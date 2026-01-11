@@ -209,7 +209,7 @@ try {
     $config_data = [
         'nom_boutique' => trim($_POST['nom_boutique']),
         'slogan' => trim($_POST['slogan'] ?? ''),
-        'logo' => $logo_filename,
+        'logo' => $logo_filename ? 'uploads/logos/' . $logo_filename : null,
         'couleur_primaire' => $_POST['couleur_primaire'] ?? '#1a7f5a',
         'couleur_secondaire' => $_POST['couleur_secondaire'] ?? '#206bc4',
         'adresse' => trim($_POST['adresse']),

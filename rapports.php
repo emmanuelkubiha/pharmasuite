@@ -4,7 +4,7 @@
  * Rapports et statistiques de vente
  */
 require_once 'protection_pages.php';
-$page_title = 'Rapports';
+$page_title = 'Rapports et Statistiques';
 
 // Périodes prédéfinies
 $periode = $_GET['periode'] ?? 'today';
@@ -41,16 +41,16 @@ $stats = db_fetch_one("
     AND statut = 'validee'
 ", [$date_debut, $date_fin]);
 
-// Top 10 produits
+// Top 10 produits (basé sur les ventes)
 $top_produits = db_fetch_all("
     SELECT 
         p.nom_produit,
         p.prix_vente,
-        SUM(vd.quantite) as quantite_vendue,
-        SUM(vd.prix_total) as montant_total
-    FROM ventes_details vd
-    INNER JOIN produits p ON vd.id_produit = p.id_produit
-    INNER JOIN ventes v ON vd.id_vente = v.id_vente
+        SUM(dv.quantite) as quantite_vendue,
+        SUM(dv.prix_total) as montant_total
+    FROM details_vente dv
+    INNER JOIN produits p ON dv.id_produit = p.id_produit
+    INNER JOIN ventes v ON dv.id_vente = v.id_vente
     WHERE DATE(v.date_vente) BETWEEN ? AND ?
     AND v.statut = 'validee'
     GROUP BY p.id_produit
@@ -71,29 +71,284 @@ $ventes_jour = db_fetch_all("
     ORDER BY jour ASC
 ", [$date_debut, $date_fin]);
 
+// Ventes par statut
+$ventes_statut = db_fetch_all("
+    SELECT 
+        statut,
+        COUNT(*) as nombre,
+        SUM(montant_total) as montant
+    FROM ventes
+    WHERE DATE(date_vente) BETWEEN ? AND ?
+    GROUP BY statut
+    ORDER BY statut ASC
+", [$date_debut, $date_fin]);
+
+// Top clients
+$top_clients = db_fetch_all("
+    SELECT 
+        c.nom_client,
+        COUNT(v.id_vente) as nombre_achats,
+        SUM(v.montant_total) as total_achete,
+        MAX(v.date_vente) as derniere_vente
+    FROM ventes v
+    INNER JOIN clients c ON v.id_client = c.id_client
+    WHERE DATE(v.date_vente) BETWEEN ? AND ?
+    AND v.statut = 'validee'
+    GROUP BY v.id_client
+    ORDER BY total_achete DESC
+    LIMIT 10
+", [$date_debut, $date_fin]);
+
+// Ventes par catégorie
+$ventes_categorie = db_fetch_all("
+    SELECT 
+        cat.nom_categorie,
+        COUNT(DISTINCT dv.id_vente) as nombre_ventes,
+        SUM(dv.quantite) as quantite_vendue,
+        SUM(dv.prix_total) as montant_total,
+        COUNT(DISTINCT p.id_produit) as nombre_produits
+    FROM details_vente dv
+    INNER JOIN produits p ON dv.id_produit = p.id_produit
+    INNER JOIN categories cat ON p.id_categorie = cat.id_categorie
+    INNER JOIN ventes v ON dv.id_vente = v.id_vente
+    WHERE DATE(v.date_vente) BETWEEN ? AND ?
+    AND v.statut = 'validee'
+    GROUP BY cat.id_categorie
+    ORDER BY montant_total DESC
+", [$date_debut, $date_fin]);
+
+// Produits par catégorie (pour detail)
+$produits_categorie = db_fetch_all("
+    SELECT 
+        cat.nom_categorie,
+        p.nom_produit,
+        SUM(dv.quantite) as quantite_vendue,
+        SUM(dv.prix_total) as montant_total,
+        p.prix_vente
+    FROM details_vente dv
+    INNER JOIN produits p ON dv.id_produit = p.id_produit
+    INNER JOIN categories cat ON p.id_categorie = cat.id_categorie
+    INNER JOIN ventes v ON dv.id_vente = v.id_vente
+    WHERE DATE(v.date_vente) BETWEEN ? AND ?
+    AND v.statut = 'validee'
+    GROUP BY p.id_produit
+    ORDER BY cat.nom_categorie ASC, montant_total DESC
+", [$date_debut, $date_fin]);
+
+// Liste complète des produits (sans prix d'achat)
+$liste_produits = db_fetch_all("
+    SELECT 
+        p.id_produit,
+        p.code_produit,
+        p.nom_produit,
+        p.prix_vente,
+        p.prix_vente_min,
+        p.quantite_stock,
+        p.seuil_alerte,
+        p.seuil_critique,
+        p.unite_mesure,
+        p.emplacement,
+        p.code_barre,
+        p.est_actif,
+        p.date_modification,
+        p.date_creation,
+        cat.nom_categorie
+    FROM produits p
+    LEFT JOIN categories cat ON p.id_categorie = cat.id_categorie
+    ORDER BY p.nom_produit ASC
+", []);
+
+// Liste des catégories (catalogue complet)
+$liste_categories = db_fetch_all("
+    SELECT id_categorie, nom_categorie, description, est_actif, date_modification
+    FROM categories
+    ORDER BY nom_categorie ASC
+", []);
+
 include 'header.php';
 ?>
 
+<style>
+.report-card-hover {
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.report-card-hover:hover {
+    transform: translateY(-5px);
+    border-color: <?php echo $couleur_primaire; ?>;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+.stat-card {
+    border-left: 4px solid <?php echo $couleur_primaire; ?>;
+}
+
+.badge-gradient {
+    background: linear-gradient(135deg, <?php echo $couleur_primaire; ?>, <?php echo $couleur_secondaire; ?>);
+    color: white;
+}
+
+/* Card sizing for better layout */
+.card-body {
+    padding: 0.75rem !important;
+}
+
+.card-title {
+    font-size: 14px !important;
+    font-weight: 600;
+}
+
+.small {
+    font-size: 11px !important;
+}
+
+.btn-sm {
+    font-size: 11px !important;
+    padding: 0.35rem 0.5rem !important;
+}
+
+.icon-small {
+    width: 28px !important;
+    height: 28px !important;
+}
+
+.card-header {
+    padding: 0.75rem 1.25rem !important;
+}
+
+/* Rapport cards uniform sizing */
+.report-card {
+    min-height: 165px;
+    border-left: 3px solid #0d6efd !important;
+    border-radius: 6px !important;
+    border: 1px solid #e9ecef !important;
+    border-left: 3px solid #0d6efd !important;
+}
+
+.report-card:hover {
+    border-left-color: #0a58ca !important;
+}
+</style>
+
+<script>
+// Prevent page reload on file downloads
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle download links - use iframe for Excel only
+    document.querySelectorAll('a[href*="ajax/export_"]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            // Only prevent default for Excel
+            const url = this.href;
+            if (url.includes('export_excel')) {
+                e.preventDefault();
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                iframe.src = url;
+                document.body.appendChild(iframe);
+                setTimeout(() => document.body.removeChild(iframe), 1000);
+            }
+            // For PDF, let browser handle it normally
+        });
+    });
+    
+    // Handle "Voir" buttons - display data in modal
+    document.querySelectorAll('.btn-voir-rapport').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const reportType = this.getAttribute('data-type');
+            if (reportType) {
+                showReportModal(reportType);
+            }
+        });
+    });
+});
+
+function showReportModal(type) {
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('reportModal');
+    
+    if (!modal) {
+        const modalHtml = `
+            <div class="modal fade" id="reportModal" tabindex="-1">
+                <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="reportTitle">Rapport</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body" id="reportContent" style="max-height: 600px; overflow-y: auto;">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Chargement...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        modal = document.getElementById('reportModal');
+    }
+    
+    // Load content
+    const contentDiv = document.getElementById('reportContent');
+    contentDiv.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Chargement...</span></div></div>';
+    
+    // Get the data based on type
+    const params = new URLSearchParams(window.location.search);
+    const dateDebut = params.get('date_debut') || new Date().toISOString().split('T')[0];
+    const dateFin = params.get('date_fin') || new Date().toISOString().split('T')[0];
+    
+    // Fetch the report content
+    fetch('ajax/get_report.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: new URLSearchParams({
+            type: type,
+            date_debut: dateDebut,
+            date_fin: dateFin
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('reportTitle').textContent = data.title;
+            contentDiv.innerHTML = data.html;
+        } else {
+            contentDiv.innerHTML = '<div class="alert alert-danger">Erreur: ' + data.message + '</div>';
+        }
+    })
+    .catch(err => {
+        contentDiv.innerHTML = '<div class="alert alert-danger">Erreur de chargement: ' + err.message + '</div>';
+    });
+    
+    // Show modal
+    new bootstrap.Modal(modal).show();
+}
+</script>
+
 <div class="container-xl">
-    <div class="page-header d-print-none mb-4">
+    <!-- Page Header -->
+    <div class="page-header d-print-none mb-2">
         <div class="row align-items-center">
             <div class="col">
-                <h2 class="page-title">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <h1 class="page-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon me-3" width="32" height="32" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                        <line x1="4" y1="19" x2="20" y2="19"/>
-                        <polyline points="4 15 8 9 12 11 16 6 20 10"/>
+                        <rect x="4" y="4" width="16" height="16" rx="2"/>
+                        <line x1="4" y1="10" x2="20" y2="10"/>
+                        <line x1="10" y1="4" x2="10" y2="20"/>
                     </svg>
-                    Rapports
-                </h2>
+                    Rapports et Statistiques
+                </h1>
+                <p class="text-muted mt-1">Analysez les performances de votre boutique</p>
             </div>
             <div class="col-auto">
                 <a href="accueil.php" class="btn btn-outline-secondary">
                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                        <line x1="5" y1="12" x2="19" y2="12"/>
-                        <line x1="5" y1="12" x2="9" y2="16"/>
-                        <line x1="5" y1="12" x2="9" y2="8"/>
+                        <polyline points="5 12 19 12"/>
+                        <polyline points="5 12 11 18"/>
+                        <polyline points="5 12 11 6"/>
                     </svg>
                     Retour
                 </a>
@@ -101,11 +356,12 @@ include 'header.php';
         </div>
     </div>
 
-    <div class="card mb-4">
+    <!-- Filtres et Périodes -->
+    <div class="card mb-2 border-0 shadow-sm">
         <div class="card-body">
-            <form method="get" class="row g-3 align-items-end">
+            <form method="get" class="row g-2 align-items-end">
                 <div class="col-md-3">
-                    <label class="form-label">Période</label>
+                    <label class="form-label fw-600">Période</label>
                     <select name="periode" class="form-select" onchange="toggleCustomDates(this.value)">
                         <option value="today" <?php echo $periode === 'today' ? 'selected' : ''; ?>>Aujourd'hui</option>
                         <option value="week" <?php echo $periode === 'week' ? 'selected' : ''; ?>>Cette semaine</option>
@@ -115,156 +371,36 @@ include 'header.php';
                     </select>
                 </div>
                 <div class="col-md-2" id="date_debut_col" style="display: <?php echo $periode === 'custom' ? 'block' : 'none'; ?>;">
-                    <label class="form-label">Date début</label>
+                    <label class="form-label fw-600">Du</label>
                     <input type="date" name="date_debut" class="form-control" value="<?php echo $date_debut; ?>">
                 </div>
                 <div class="col-md-2" id="date_fin_col" style="display: <?php echo $periode === 'custom' ? 'block' : 'none'; ?>;">
-                    <label class="form-label">Date fin</label>
+                    <label class="form-label fw-600">Au</label>
                     <input type="date" name="date_fin" class="form-control" value="<?php echo $date_fin; ?>">
                 </div>
                 <div class="col-md-2">
                     <button type="submit" class="btn btn-primary w-100">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
-                        Filtrer
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+                        Appliquer
                     </button>
-                </div>
-                <div class="col-md-3">
-                    <div class="btn-group w-100" role="group">
-                        <button type="button" class="btn btn-outline-success" onclick="exportReport('excel')" data-bs-toggle="tooltip" title="Télécharger en Excel">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><polyline points="9 14 12 17 15 14"/></svg>
-                            Excel
-                        </button>
-                        <button type="button" class="btn btn-outline-danger" onclick="exportReport('pdf')" data-bs-toggle="tooltip" title="Télécharger en PDF">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4"/><path d="M5 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6"/><path d="M17 18h2"/><path d="M20 15h-3v6"/><path d="M11 15v6h1a2 2 0 0 0 2 -2v-2a2 2 0 0 0 -2 -2h-1z"/></svg>
-                            PDF
-                        </button>
-                    </div>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Boutons de types de rapports -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h3 class="card-title">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/><line x1="9" y1="12" x2="9.01" y2="12"/><line x1="13" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="9.01" y2="16"/><line x1="13" y1="16" x2="15" y2="16"/></svg>
-                Types de rapports disponibles
-            </h3>
-        </div>
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-3">
-                    <div class="card card-link card-link-pop">
-                        <div class="card-body text-center">
-                            <div class="avatar avatar-lg bg-blue-lt mb-3 mx-auto">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5"/><path d="M12 12l8 -4.5"/><path d="M12 12l0 9"/><path d="M12 12l-8 -4.5"/></svg>
-                            </div>
-                            <h4>Liste des produits</h4>
-                            <p class="text-muted mb-3">Tous les produits avec stock et prix</p>
-                            <div class="btn-group btn-group-sm">
-                                <a href="ajax/export_excel.php?type=produits" class="btn btn-success" target="_blank">Excel</a>
-                                <a href="ajax/export_pdf.php?type=produits" class="btn btn-danger" target="_blank">PDF</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card card-link card-link-pop">
-                        <div class="card-body text-center">
-                            <div class="avatar avatar-lg bg-green-lt mb-3 mx-auto">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="6" cy="19" r="2"/><circle cx="17" cy="19" r="2"/><path d="M17 17h-11v-14h-2"/><path d="M6 5l14 1l-1 7h-13"/></svg>
-                            </div>
-                            <h4>Rapport des ventes</h4>
-                            <p class="text-muted mb-3">Détail de toutes les ventes</p>
-                            <div class="btn-group btn-group-sm">
-                                <a href="ajax/export_excel.php?type=ventes&date_debut=<?php echo $date_debut; ?>&date_fin=<?php echo $date_fin; ?>" class="btn btn-success" target="_blank">Excel</a>
-                                <a href="ajax/export_pdf.php?type=ventes&date_debut=<?php echo $date_debut; ?>&date_fin=<?php echo $date_fin; ?>" class="btn btn-danger" target="_blank">PDF</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card card-link card-link-pop">
-                        <div class="card-body text-center">
-                            <div class="avatar avatar-lg bg-yellow-lt mb-3 mx-auto">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M16.7 8a3 3 0 0 0 -2.7 -2h-4a3 3 0 0 0 0 6h4a3 3 0 0 1 0 6h-4a3 3 0 0 1 -2.7 -2"/><path d="M12 3v3m0 12v3"/></svg>
-                            </div>
-                            <h4>Rapport des bénéfices</h4>
-                            <p class="text-muted mb-3">Marges et rentabilité par produit</p>
-                            <div class="btn-group btn-group-sm">
-                                <a href="ajax/export_excel.php?type=benefices&date_debut=<?php echo $date_debut; ?>&date_fin=<?php echo $date_fin; ?>" class="btn btn-success" target="_blank">Excel</a>
-                                <a href="ajax/export_pdf.php?type=benefices&date_debut=<?php echo $date_debut; ?>&date_fin=<?php echo $date_fin; ?>" class="btn btn-danger" target="_blank">PDF</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card card-link card-link-pop">
-                        <div class="card-body text-center">
-                            <div class="avatar avatar-lg bg-purple-lt mb-3 mx-auto">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><rect x="4" y="5" width="16" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="4" y1="11" x2="20" y2="11"/><rect x="8" y="15" width="2" height="2"/></svg>
-                            </div>
-                            <h4>Rapport par catégories</h4>
-                            <p class="text-muted mb-3">Performance par catégorie</p>
-                            <div class="btn-group btn-group-sm">
-                                <a href="ajax/export_excel.php?type=categories&date_debut=<?php echo $date_debut; ?>&date_fin=<?php echo $date_fin; ?>" class="btn btn-success" target="_blank">Excel</a>
-                                <a href="ajax/export_pdf.php?type=categories&date_debut=<?php echo $date_debut; ?>&date_fin=<?php echo $date_fin; ?>" class="btn btn-danger" target="_blank">PDF</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card">
+    <!-- KPIs Principaux -->
+    <div class="row mb-2 g-2">
+        <div class="col-md-6">
+            <div class="card stat-card border-0 shadow-sm">
                 <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="avatar avatar-lg me-3" style="background: linear-gradient(135deg, <?php echo $couleur_primaire; ?>, <?php echo $couleur_secondaire; ?>); color: white;">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                <circle cx="9" cy="7" r="4"/>
-                                <path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                                <path d="M21 21v-2a4 4 0 0 0 -3 -3.85"/>
-                            </svg>
-                        </div>
+                    <div class="d-flex align-items-start justify-content-between">
                         <div>
-                            <h3 class="mb-0"><?php echo $stats['total_ventes']; ?></h3>
-                            <div class="text-muted">Nombre de ventes</div>
+                            <div class="text-muted small fw-600 mb-2">NOMBRE DE VENTES</div>
+                            <h3 class="mb-0"><?php echo number_format($stats['total_ventes'], 0, ',', ' '); ?></h3>
+                            <small class="text-muted">ventes validées</small>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="avatar avatar-lg bg-success-lt me-3">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                <path d="M16.7 8a3 3 0 0 0 -2.7 -2h-4a3 3 0 0 0 0 6h4a3 3 0 0 1 0 6h-4a3 3 0 0 1 -2.7 -2"/>
-                                <path d="M12 3v3m0 12v3"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="mb-0"><?php echo format_montant($stats['chiffre_affaires']); ?></h3>
-                            <div class="text-muted">Chiffre d'affaires</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="avatar avatar-lg bg-info-lt me-3">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <div class="badge badge-gradient p-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                 <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
                                 <circle cx="6" cy="19" r="2"/>
                                 <circle cx="17" cy="19" r="2"/>
@@ -272,9 +408,24 @@ include 'header.php';
                                 <path d="M6 5l14 1l-1 7h-13"/>
                             </svg>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card stat-card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-start justify-content-between">
                         <div>
-                            <h3 class="mb-0"><?php echo format_montant($stats['panier_moyen']); ?></h3>
-                            <div class="text-muted">Panier moyen</div>
+                            <div class="text-muted small fw-600 mb-2">PANIER MOYEN</div>
+                            <h3 class="mb-0 text-info"><?php echo format_montant($stats['panier_moyen']); ?></h3>
+                            <small class="text-muted">montant par vente</small>
+                        </div>
+                        <div class="badge bg-info p-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                <path d="M12 17.5c2.664 0 4.5 -1.679 4.5 -3.5c0 -1 -.516 -1.911 -1.5 -2.5c1.579 -1.151 2.517 -2 2.517 -3.5c0 -1.861 -1.823 -3 -4.017 -3c-1.498 0 -2.783 .856 -3.5 1.659c-.718 -.803 -2.002 -1.659 -3.5 -1.659c-2.194 0 -4.017 1.139 -4.017 3c0 1.5 .938 2.349 2.517 3.5c-.984 .589 -1.5 1.5 -1.5 2.5c0 1.821 1.836 3.5 4.5 3.5z"/>
+                            </svg>
                         </div>
                     </div>
                 </div>
@@ -282,11 +433,373 @@ include 'header.php';
         </div>
     </div>
 
-    <div class="row">
+
+
+    <!-- Résumé par Statut -->
+    <div class="card mb-2 border-0 shadow-sm">
+        <div class="card-header bg-light border-0 py-3">
+            <h3 class="card-title d-flex align-items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="10" y1="4" x2="10" y2="20"/>
+                </svg>
+                Récapitulatif par statut
+            </h3>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-vcenter table-hover card-table">
+                <thead class="bg-light">
+                    <tr>
+                        <th>État</th>
+                        <th class="text-center">Nombre de ventes</th>
+                        <th class="text-end">Montant total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php 
+                    foreach ($ventes_statut as $stat):
+                        $color = match($stat['statut']) {
+                            'validee' => 'bg-success-lt',
+                            'brouillon' => 'bg-warning-lt',
+                            'annulea' => 'bg-danger-lt',
+                            'remboursee' => 'bg-secondary-lt',
+                            default => 'bg-light'
+                        };
+                        $label = match($stat['statut']) {
+                            'validee' => 'Validée',
+                            'brouillon' => 'Brouillon',
+                            'annulea' => 'Annulée',
+                            'remboursee' => 'Remboursée',
+                            default => ucfirst($stat['statut'])
+                        };
+                    ?>
+                    <tr>
+                        <td>
+                            <span class="badge <?php echo $color; ?>">
+                                <?php echo e($label); ?>
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <strong><?php echo $stat['nombre']; ?></strong>
+                        </td>
+                        <td class="text-end">
+                            <strong><?php echo format_montant($stat['montant'] ?? 0); ?></strong>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                    <?php if (empty($ventes_statut)): ?>
+                    <tr>
+                        <td colspan="3" class="text-center text-muted py-4">Aucune vente enregistrée pour cette période</td>
+                    </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Types de Rapports -->
+    <div class="card mb-2 border-0 shadow-sm">
+        <div class="card-header bg-light border-0 py-2">
+            <h3 class="card-title d-flex align-items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/>
+                </svg>
+                Rapports téléchargeables
+            </h3>
+        </div>
+        <div class="card-body">
+            <div class="row g-2">
+                <!-- Rapport Ventes -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="card report-card shadow-sm h-100">
+                        <div class="card-body d-flex flex-column">
+                            <div class="mb-2">
+                                <h5 class="card-title mb-1">Rapport des ventes</h5>
+                                <p class="small mb-0 text-muted">Tous les détails</p>
+                            </div>
+                            <div class="mt-auto pt-1 d-flex gap-1">
+                                <a href="ajax/export_excel.php?type=ventes&date_debut=<?php echo $date_debut; ?>&date_fin=<?php echo $date_fin; ?>" class="btn btn-success btn-sm flex-fill" title="Rapport Excel">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; margin-right:4px;">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/>
+                                    </svg>
+                                    Excel
+                                </a>
+                                <a href="rapport_affichage.php?type=ventes&periode=<?php echo $periode; ?>&date_debut=<?php echo $date_debut; ?>&date_fin=<?php echo $date_fin; ?>" target="_blank" class="btn btn-danger btn-sm flex-fill" title="Rapport PDF">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; margin-right:4px;">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/>
+                                    </svg>
+                                    PDF
+                                </a>
+                                <a href="#" class="btn btn-info btn-sm flex-fill btn-voir-rapport" data-type="ventes" title="Visualiser">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; margin-right:4px;">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="2"/><path d="M22 12c-2.667 4.667 -6.667 7 -11 7s-8.333 -2.333 -11 -7c2.667 -4.667 6.667 -7 11 -7s8.333 2.333 11 7"/>
+                                    </svg>
+                                    Voir
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rapport Produits -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="card report-card shadow-sm h-100">
+                        <div class="card-body d-flex flex-column">
+                            <div class="mb-2">
+                                <h5 class="card-title mb-1">Inventaire produits</h5>
+                                <p class="small mb-0 text-muted">Catalogue complet</p>
+                            </div>
+                            <div class="mt-auto pt-1 d-flex gap-1">
+                                <a href="ajax/export_excel.php?type=produits" class="btn btn-success btn-sm flex-fill" title="Rapport Excel">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; margin-right:4px;">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/>
+                                    </svg>
+                                    Excel
+                                </a>
+                                <a href="rapport_affichage.php?type=produits&periode=<?php echo $periode; ?>&date_debut=<?php echo $date_debut; ?>&date_fin=<?php echo $date_fin; ?>" target="_blank" class="btn btn-danger btn-sm flex-fill" title="Rapport PDF">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; margin-right:4px;">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/>
+                                    </svg>
+                                    PDF
+                                </a>
+                                <a href="#" class="btn btn-info btn-sm flex-fill btn-voir-rapport" data-type="produits" title="Visualiser">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; margin-right:4px;">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="2"/><path d="M22 12c-2.667 4.667 -6.667 7 -11 7s-8.333 -2.333 -11 -7c2.667 -4.667 6.667 -7 11 -7s8.333 2.333 11 7"/>
+                                    </svg>
+                                    Voir
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rapport Bénéfices (Admin seulement) -->
+                <?php if ($is_admin): ?>
+                <div class="col-md-6 col-lg-3">
+                    <div class="card report-card shadow-sm h-100">
+                        <div class="card-body d-flex flex-column">
+                            <div class="mb-2">
+                                <h5 class="card-title mb-1">Analyse profitabilité</h5>
+                                <p class="small mb-0 text-muted">Marges et rendement</p>
+                            </div>
+                            <div class="mt-auto pt-1 d-flex gap-1">
+                                <a href="ajax/export_excel.php?type=benefices&date_debut=<?php echo $date_debut; ?>&date_fin=<?php echo $date_fin; ?>" class="btn btn-success btn-sm flex-fill" title="Rapport Excel">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; margin-right:4px;">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/>
+                                    </svg>
+                                    Excel
+                                </a>
+                                <a href="rapport_affichage.php?type=benefices&periode=<?php echo $periode; ?>&date_debut=<?php echo $date_debut; ?>&date_fin=<?php echo $date_fin; ?>" target="_blank" class="btn btn-danger btn-sm flex-fill" title="Rapport PDF">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; margin-right:4px;">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/>
+                                    </svg>
+                                    PDF
+                                </a>
+                                <a href="#" class="btn btn-info btn-sm flex-fill btn-voir-rapport" data-type="benefices" title="Visualiser">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; margin-right:4px;">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="2"/><path d="M22 12c-2.667 4.667 -6.667 7 -11 7s-8.333 -2.333 -11 -7c2.667 -4.667 6.667 -7 11 -7s8.333 2.333 11 7"/>
+                                    </svg>
+                                    Voir
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <!-- Rapport Catégories -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="card report-card shadow-sm h-100">
+                        <div class="card-body d-flex flex-column">
+                            <div class="mb-2">
+                                <h5 class="card-title mb-1">Performance catégories</h5>
+                                <p class="small mb-0 text-muted">Par segment</p>
+                            </div>
+                            <div class="mt-auto pt-1 d-flex gap-1">
+                                <a href="ajax/export_excel.php?type=categories&date_debut=<?php echo $date_debut; ?>&date_fin=<?php echo $date_fin; ?>" class="btn btn-success btn-sm flex-fill" title="Rapport Excel">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; margin-right:4px;">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/>
+                                    </svg>
+                                    Excel
+                                </a>
+                                <a href="rapport_affichage.php?type=categories&periode=<?php echo $periode; ?>&date_debut=<?php echo $date_debut; ?>&date_fin=<?php echo $date_fin; ?>" target="_blank" class="btn btn-danger btn-sm flex-fill" title="Rapport PDF">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; margin-right:4px;">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/>
+                                    </svg>
+                                    PDF
+                                </a>
+                                <a href="#" class="btn btn-info btn-sm flex-fill btn-voir-rapport" data-type="categories" title="Visualiser">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; margin-right:4px;">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="2"/><path d="M22 12c-2.667 4.667 -6.667 7 -11 7s-8.333 -2.333 -11 -7c2.667 -4.667 6.667 -7 11 -7s8.333 2.333 11 7"/>
+                                    </svg>
+                                    Voir
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Catalogue Produits & Catégories -->
+    <div class="row mb-2 g-2">
         <div class="col-lg-8">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h3 class="card-title">Évolution des ventes</h3>
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-light border-0 py-2 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <h3 class="card-title d-flex align-items-center mb-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7h16"/><path d="M10 11h6"/><path d="M8 15h8"/><path d="M12 3v2"/><path d="M6 3v2"/><path d="M18 3v2"/><rect x="4" y="5" width="16" height="14" rx="2"/>
+                            </svg>
+                            Liste complète des produits
+                        </h3>
+                    </div>
+                    <div class="d-flex gap-1">
+                        <a href="ajax/export_excel.php?type=produits" class="btn btn-success btn-sm" title="Exporter en Excel">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; margin-right:4px;">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/>
+                            </svg>
+                            Export Excel
+                        </a>
+                        <a href="rapport_affichage.php?type=produits&periode=<?php echo $periode; ?>&date_debut=<?php echo $date_debut; ?>&date_fin=<?php echo $date_fin; ?>" target="_blank" class="btn btn-danger btn-sm" title="Imprimer / PDF">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; margin-right:4px;">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/>
+                            </svg>
+                            Imprimer
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2 align-items-center mb-2">
+                        <div class="col-md-6">
+                            <input type="text" id="filterProduitsList" class="form-control form-control-sm" placeholder="Rechercher un produit (nom, code, catégorie)...">
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <small class="text-muted">Total : <?php echo count($liste_produits); ?> produit<?php echo count($liste_produits) > 1 ? 's' : ''; ?></small>
+                        </div>
+                    </div>
+                    <div class="table-responsive" style="max-height: 420px; overflow-y: auto;">
+                        <table class="table table-vcenter table-hover card-table" id="tableProduitsList">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Produit</th>
+                                    <th>Catégorie</th>
+                                    <th class="text-end">Prix vente</th>
+                                    <th class="text-end">Prix min.</th>
+                                    <th class="text-center">Stock</th>
+                                    <th class="text-center">Seuils</th>
+                                    <th>Unité</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (empty($liste_produits)): ?>
+                                <tr>
+                                    <td colspan="10" class="text-center text-muted py-4">Aucun produit enregistré</td>
+                                </tr>
+                                <?php else: ?>
+                                <?php foreach ($liste_produits as $prod): 
+                                    $search = strtolower(($prod['nom_produit'] ?? '') . ' ' . ($prod['code_produit'] ?? '') . ' ' . ($prod['nom_categorie'] ?? '') . ' ' . ($prod['code_barre'] ?? ''));
+                                    $statut_label = $prod['est_actif'] ? 'Actif' : 'Inactif';
+                                    $statut_class = $prod['est_actif'] ? 'bg-success-lt' : 'bg-secondary-lt';
+                                ?>
+                                <tr class="produit-full-row" data-search="<?php echo e($search); ?>">
+                                    <td><strong><?php echo e($prod['code_produit'] ?? '—'); ?></strong></td>
+                                    <td>
+                                        <div class="fw-600"><?php echo e($prod['nom_produit']); ?></div>
+                                        <small class="text-muted">#<?php echo $prod['id_produit']; ?></small>
+                                    </td>
+                                    <td><span class="badge bg-purple-lt"><?php echo e($prod['nom_categorie'] ?? 'Non classé'); ?></span></td>
+                                    <td class="text-end text-success text-nowrap"><?php echo format_montant($prod['prix_vente']); ?></td>
+                                    <td class="text-end text-muted text-nowrap"><?php echo $prod['prix_vente_min'] ? format_montant($prod['prix_vente_min']) : '—'; ?></td>
+                                    <td class="text-center">
+                                        <span class="badge <?php echo ($prod['quantite_stock'] <= $prod['seuil_critique']) ? 'bg-danger' : (($prod['quantite_stock'] <= $prod['seuil_alerte']) ? 'bg-warning' : 'bg-success'); ?>">
+                                            <?php echo $prod['quantite_stock']; ?>
+                                        </span>
+                                    </td>
+                                    <td class="text-center text-muted small">
+                                        <?php echo $prod['seuil_alerte']; ?>/<?php echo $prod['seuil_critique']; ?>
+                                    </td>
+                                    <td><?php echo e($prod['unite_mesure'] ?? ''); ?></td>
+                                    <td>
+                                        <span class="badge <?php echo $statut_class; ?> text-dark fw-600"><?php echo $statut_label; ?></span>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-light border-0 py-2 d-flex align-items-center justify-content-between">
+                    <h3 class="card-title d-flex align-items-center mb-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7h16"/><path d="M10 11h6"/><path d="M8 15h8"/><path d="M4 5v14"/><path d="M20 5v14"/>
+                        </svg>
+                        Catégories du catalogue
+                    </h3>
+                    <input type="text" id="filterCategoriesList" class="form-control form-control-sm" placeholder="Filtrer" style="width: 180px;">
+                </div>
+                <div class="table-responsive" style="max-height: 420px; overflow-y: auto;">
+                    <table class="table table-vcenter table-hover card-table">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Catégorie</th>
+                                <th>Statut</th>
+                                <th class="text-end">Modifié</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($liste_categories)): ?>
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-4">Aucune catégorie</td>
+                            </tr>
+                            <?php else: ?>
+                            <?php foreach ($liste_categories as $cat): 
+                                $cat_search = strtolower(($cat['nom_categorie'] ?? '') . ' ' . ($cat['description'] ?? ''));
+                                $cat_label = $cat['est_actif'] ? 'Active' : 'Inactive';
+                                $cat_class = $cat['est_actif'] ? 'bg-success-lt' : 'bg-secondary-lt';
+                            ?>
+                            <tr class="categorie-full-row" data-search="<?php echo e($cat_search); ?>">
+                                <td>
+                                    <strong><?php echo e($cat['nom_categorie']); ?></strong>
+                                    <?php if (!empty($cat['description'])): ?>
+                                    <div class="text-muted small"><?php echo e($cat['description']); ?></div>
+                                    <?php endif; ?>
+                                </td>
+                                <td><span class="badge <?php echo $cat_class; ?> text-dark fw-600"><?php echo $cat_label; ?></span></td>
+                                <td class="text-end text-muted small">
+                                    <?php echo $cat['date_modification'] ? date('d/m/Y', strtotime($cat['date_modification'])) : '—'; ?>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graphiques -->
+    <div class="row mb-2 g-2">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-0 py-2">
+                    <h3 class="card-title d-flex align-items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/><polyline points="4 19 8 13 12 15 16 10 20 14 20 19 4 19"/>
+                        </svg>
+                        Évolution des ventes
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon ms-2" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" data-bs-toggle="tooltip" data-bs-placement="top" title="Graphique montrant l'évolution des ventes sur la période sélectionnée. La courbe représente le montant total des ventes (TTC) jour par jour. Permet de visualiser les tendances et les variations du chiffre d'affaires." style="cursor: help; opacity: 0.7;">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12.01" y2="8"/><polyline points="11 12 12 12 12 16 13 16"/>
+                        </svg>
+                    </h3>
                 </div>
                 <div class="card-body">
                     <canvas id="salesChart" height="300"></canvas>
@@ -295,11 +808,16 @@ include 'header.php';
         </div>
 
         <div class="col-lg-4">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h3 class="card-title">Top 10 Produits</h3>
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-0 py-3">
+                    <h3 class="card-title d-flex align-items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/><polyline points="12 3 20 7.5 20 16.5 12 21 4 16.5 4 7.5 12 3"/><polyline points="12 12 20 7.5"/>
+                        </svg>
+                        Top 10 Produits
+                    </h3>
                 </div>
-                <div class="card-body p-0">
+                <div class="card-body p-0" style="max-height: 450px; overflow-y: auto;">
                     <div class="list-group list-group-flush">
                         <?php if (empty($top_produits)): ?>
                         <div class="list-group-item text-center text-muted py-4">
@@ -309,13 +827,19 @@ include 'header.php';
                         <?php foreach ($top_produits as $index => $produit): ?>
                         <div class="list-group-item">
                             <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <span class="badge bg-primary me-2"><?php echo $index + 1; ?></span>
-                                    <strong><?php echo e($produit['nom_produit']); ?></strong>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge badge-gradient me-2" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                                            <?php echo $index + 1; ?>
+                                        </span>
+                                        <div>
+                                            <strong class="d-block small"><?php echo e($produit['nom_produit']); ?></strong>
+                                            <small class="text-muted"><?php echo $produit['quantite_vendue']; ?> unit<?php echo $produit['quantite_vendue'] > 1 ? 'és' : 'é'; ?></small>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="text-end">
-                                    <div class="text-muted small"><?php echo $produit['quantite_vendue']; ?> unités</div>
-                                    <strong><?php echo format_montant($produit['montant_total']); ?></strong>
+                                <div class="text-end ms-2">
+                                    <strong class="d-block text-success small"><?php echo format_montant($produit['montant_total']); ?></strong>
                                 </div>
                             </div>
                         </div>
@@ -324,6 +848,182 @@ include 'header.php';
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Ventes par Catégorie -->
+    <div class="row mb-2 g-2">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-0 py-2">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h3 class="card-title d-flex align-items-center mb-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/><rect x="5" y="3" width="4" height="4"/><rect x="15" y="3" width="4" height="4"/><rect x="5" y="13" width="4" height="4"/><rect x="15" y="13" width="4" height="4"/>
+                            </svg>
+                            Ventes par catégorie
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon ms-2" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" data-bs-toggle="tooltip" data-bs-placement="top" title="Récapitulatif du chiffre d'affaires par catégorie de produits. Affiche le nombre de produits différents vendus, la quantité totale et le montant total TTC pour chaque catégorie." style="cursor: help; opacity: 0.7;">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12.01" y2="8"/><polyline points="11 12 12 12 12 16 13 16"/>
+                            </svg>
+                        </h3>
+                        <input type="text" id="filterCategorie" class="form-control form-control-sm" placeholder="Filtrer..." style="width: 150px;">
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-vcenter table-hover card-table" id="tableCategorie">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Catégorie</th>
+                                <th class="text-center">Produits</th>
+                                <th class="text-center">Quantité</th>
+                                <th class="text-end">Montant</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($ventes_categorie)): ?>
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">Aucune vente</td>
+                            </tr>
+                            <?php else: ?>
+                            <?php foreach ($ventes_categorie as $cat): ?>
+                            <tr class="categorie-row" data-categorie="<?php echo strtolower(e($cat['nom_categorie'])); ?>">
+                                <td>
+                                    <strong><?php echo e($cat['nom_categorie']); ?></strong>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-blue"><?php echo $cat['nombre_produits']; ?></span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge badge-gradient"><?php echo $cat['quantite_vendue']; ?></span>
+                                </td>
+                                <td class="text-end">
+                                    <strong class="text-success"><?php echo format_montant($cat['montant_total']); ?></strong>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-0 py-2">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h3 class="card-title d-flex align-items-center mb-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/><circle cx="15" cy="11" r="2"/><path d="M21 20v-2a2 2 0 0 0 -2 -2"/>
+                            </svg>
+                            Top 10 Clients
+                        </h3>
+                        <input type="text" id="filterClients" class="form-control form-control-sm" placeholder="Filtrer..." style="width: 150px;">
+                    </div>
+                </div>
+                <div class="card-body p-0" style="max-height: 520px; overflow-y: auto;">
+                    <div class="list-group list-group-flush">
+                        <?php if (empty($top_clients)): ?>
+                        <div class="list-group-item text-center text-muted py-4">
+                            Aucune vente
+                        </div>
+                        <?php else: ?>
+                        <?php foreach ($top_clients as $index => $client): ?>
+                        <div class="list-group-item client-row" data-client="<?php echo strtolower(e($client['nom_client'])); ?>">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <span class="badge badge-gradient me-2" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                                            <?php echo $index + 1; ?>
+                                        </span>
+                                        <div>
+                                            <strong class="d-block"><?php echo e($client['nom_client']); ?></strong>
+                                            <small class="text-muted"><?php echo $client['nombre_achats']; ?> achat<?php echo $client['nombre_achats'] > 1 ? 's' : ''; ?></small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <strong class="d-block text-success"><?php echo format_montant($client['total_achete']); ?></strong>
+                                    <small class="text-muted"><?php echo date('d/m/Y', strtotime($client['derniere_vente'])); ?></small>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Détail Produits par Catégorie -->
+    <div class="card mb-2 border-0 shadow-sm">
+        <div class="card-header bg-light border-0 py-2">
+            <div class="d-flex align-items-center justify-content-between">
+                <h3 class="card-title d-flex align-items-center mb-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="9" cy="5" r="4"/><path d="M3 19c0 -2.21 4.03 -4 9 -4s9 1.79 9 4"/>
+                    </svg>
+                    Détail produits par catégorie
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon ms-2" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" data-bs-toggle="tooltip" data-bs-placement="top" title="Liste détaillée de chaque produit vendu, organisée par catégorie. Choisissez une catégorie dans le menu pour filtrer les résultats. Affiche la quantité vendue, le prix unitaire et le montant total HT pour chaque produit." style="cursor: help; opacity: 0.7;">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12.01" y2="8"/><polyline points="11 12 12 12 12 16 13 16"/>
+                    </svg>
+                </h3>
+                <select id="filterProduitCategorie" class="form-select form-select-sm" style="width: 200px;">
+                    <option value="">-- Toutes les catégories --</option>
+                    <?php foreach ($ventes_categorie as $cat): ?>
+                    <option value="<?php echo strtolower(e($cat['nom_categorie'])); ?>"><?php echo e($cat['nom_categorie']); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-vcenter table-hover card-table">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Catégorie</th>
+                        <th>Produit</th>
+                        <th class="text-center">Quantité vendue</th>
+                        <th class="text-end">Prix unitaire</th>
+                        <th class="text-end">Montant</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php 
+                    $current_cat = '';
+                    if (empty($produits_categorie)): 
+                    ?>
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">Aucune vente</td>
+                    </tr>
+                    <?php else: ?>
+                    <?php foreach ($produits_categorie as $prod): 
+                        $show_cat = $current_cat !== $prod['nom_categorie'];
+                        if ($show_cat) $current_cat = $prod['nom_categorie'];
+                    ?>
+                    <tr class="produit-row" data-categorie="<?php echo strtolower(e($prod['nom_categorie'])); ?>">
+                        <td <?php if ($show_cat) echo 'class="fw-600"'; ?>>
+                            <?php if ($show_cat): ?>
+                            <span class="badge bg-purple"><?php echo e($prod['nom_categorie']); ?></span>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <span class="text-muted"><?php echo e($prod['nom_produit']); ?></span>
+                        </td>
+                        <td class="text-center">
+                            <strong><?php echo $prod['quantite_vendue']; ?></strong>
+                        </td>
+                        <td class="text-end text-muted">
+                            <?php echo format_montant($prod['prix_vente']); ?>
+                        </td>
+                        <td class="text-end">
+                            <strong><?php echo format_montant($prod['montant_total']); ?></strong>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -340,28 +1040,8 @@ function toggleCustomDates(periode) {
     } else {
         dateDebutCol.style.display = 'none';
         dateFinCol.style.display = 'none';
-        // Auto-submit when not custom
         document.querySelector('form').submit();
     }
-}
-
-// Export report
-function exportReport(format) {
-    const form = document.querySelector('form');
-    const formData = new FormData(form);
-    const params = new URLSearchParams(formData);
-    
-    // Sélectionner le type de rapport à exporter
-    const types = ['ventes', 'benefices', 'categories', 'produits', 'stock'];
-    const typeSelect = prompt('Choisissez le type de rapport:\n1. Ventes\n2. Bénéfices\n3. Catégories\n4. Produits\n5. État du stock', '1');
-    
-    if (!typeSelect || typeSelect < 1 || typeSelect > 5) {
-        return;
-    }
-    
-    const type = types[parseInt(typeSelect) - 1];
-    const url = `ajax/export_${format}.php?type=${type}&${params.toString()}`;
-    window.open(url, '_blank');
 }
 
 // Initialize tooltips
@@ -385,7 +1065,11 @@ new Chart(ctx, {
             borderColor: '<?php echo $couleur_primaire; ?>',
             backgroundColor: '<?php echo $couleur_primaire; ?>20',
             tension: 0.4,
-            fill: true
+            fill: true,
+            pointRadius: 5,
+            pointBackgroundColor: '<?php echo $couleur_primaire; ?>',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2
         }]
     },
     options: {
@@ -404,6 +1088,57 @@ new Chart(ctx, {
         }
     }
 });
+
+// Filtrage - Catégories
+document.getElementById('filterCategorie').addEventListener('keyup', function(e) {
+    const filter = this.value.toLowerCase();
+    document.querySelectorAll('.categorie-row').forEach(row => {
+        const categorie = row.getAttribute('data-categorie');
+        row.style.display = categorie.includes(filter) ? '' : 'none';
+    });
+});
+
+// Filtrage - Clients
+document.getElementById('filterClients').addEventListener('keyup', function(e) {
+    const filter = this.value.toLowerCase();
+    document.querySelectorAll('.client-row').forEach(row => {
+        const client = row.getAttribute('data-client');
+        row.style.display = client.includes(filter) ? '' : 'none';
+    });
+});
+
+// Filtrage - Produits par Catégorie (dropdown)
+document.getElementById('filterProduitCategorie').addEventListener('change', function(e) {
+    const filter = this.value.toLowerCase();
+    document.querySelectorAll('.produit-row').forEach(row => {
+        const categorie = row.getAttribute('data-categorie');
+        row.style.display = (filter === '' || categorie === filter) ? '' : 'none';
+    });
+});
+
+// Filtrage - Liste complète des produits
+const filterProduitsList = document.getElementById('filterProduitsList');
+if (filterProduitsList) {
+    filterProduitsList.addEventListener('keyup', function() {
+        const needle = this.value.toLowerCase();
+        document.querySelectorAll('.produit-full-row').forEach(row => {
+            const haystack = row.getAttribute('data-search');
+            row.style.display = haystack.includes(needle) ? '' : 'none';
+        });
+    });
+}
+
+// Filtrage - Liste des catégories
+const filterCategoriesList = document.getElementById('filterCategoriesList');
+if (filterCategoriesList) {
+    filterCategoriesList.addEventListener('keyup', function() {
+        const needle = this.value.toLowerCase();
+        document.querySelectorAll('.categorie-full-row').forEach(row => {
+            const haystack = row.getAttribute('data-search');
+            row.style.display = haystack.includes(needle) ? '' : 'none';
+        });
+    });
+}
 </script>
 
 <?php include 'footer.php'; ?>

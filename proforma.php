@@ -117,8 +117,8 @@ $numero_proforma = 'PRO-' . date('Ymd') . '-' . substr(uniqid(), -6);
         <div class="invoice-header">
             <div class="row align-items-center">
                 <div class="col-md-2 text-center">
-                    <?php if (!empty($logo_boutique) && file_exists("uploads/logos/$logo_boutique")): ?>
-                    <img src="uploads/logos/<?php echo htmlspecialchars($logo_boutique); ?>" 
+                    <?php if (!empty($logo_boutique)): ?>
+                    <img src="<?php echo htmlspecialchars($logo_boutique); ?>" 
                          alt="Logo" 
                          style="max-width: 100px; max-height: 100px; padding: 10px; border-radius: 10px; object-fit: contain;">
                     <?php else: ?>
@@ -132,13 +132,13 @@ $numero_proforma = 'PRO-' . date('Ymd') . '-' . substr(uniqid(), -6);
                 </div>
                 <div class="col-md-6">
                     <h1 class="mb-0"><?php echo htmlspecialchars($config['nom_boutique']); ?></h1>
-                    <p class="mb-0"><?php echo htmlspecialchars($config['adresse_boutique'] ?? ''); ?></p>
+                    <p class="mb-0"><?php echo htmlspecialchars($config['adresse'] ?? ''); ?></p>
                     <p class="mb-0">
-                        <?php if (!empty($config['telephone_boutique'])): ?>
-                        Tél: <?php echo htmlspecialchars($config['telephone_boutique']); ?>
+                        <?php if (!empty($config['telephone'])): ?>
+                        Tél: <?php echo htmlspecialchars($config['telephone']); ?>
                         <?php endif; ?>
-                        <?php if (!empty($config['email_boutique'])): ?>
-                        | Email: <?php echo htmlspecialchars($config['email_boutique']); ?>
+                        <?php if (!empty($config['email'])): ?>
+                        | Email: <?php echo htmlspecialchars($config['email']); ?>
                         <?php endif; ?>
                     </p>
                 </div>

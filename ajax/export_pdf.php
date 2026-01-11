@@ -6,11 +6,12 @@
 
 // Gestion des erreurs
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', 0);
 
 try {
     require_once __DIR__ . '/../protection_pages.php';
 } catch (Exception $e) {
+    http_response_code(500);
     die('<html><body><h1>Erreur de chargement</h1><p>' . htmlspecialchars($e->getMessage()) . '</p></body></html>');
 }
 
@@ -22,13 +23,17 @@ $date_fin = $_GET['date_fin'] ?? date('Y-m-d');
 // Vérifier que le type est valide
 $types_valides = ['produits', 'ventes', 'benefices', 'categories', 'stock'];
 if (empty($type) || !in_array($type, $types_valides)) {
-    die('<html><body><h1>Erreur</h1><p>Type de rapport invalide ou non spécifié.</p><p>Types valides : ' . implode(', ', $types_valides) . '</p></body></html>');
+    http_response_code(400);
+    die('<html><body><h1>Erreur</h1><p>Type de rapport invalide ou non spécifié.</p></body></html>');
 }
 
-// Headers pour affichage HTML (pas de vraie génération PDF sans bibliothèque)
-header('Content-Type: text/html; charset=UTF-8');
+// Vérifier que c'est un admin pour bénéfices
+if ($type === 'benefices' && !$is_admin) {
+    http_response_code(403);
+    die('<html><body><h1>Accès refusé</h1><p>Vous n\'avez pas les permissions pour accéder à ce rapport.</p></body></html>');
+}
 
-// Génération du contenu HTML
+// Générer le contenu HTML
 ob_start();
 ?>
 <!DOCTYPE html>
@@ -55,12 +60,12 @@ ob_start();
 <body>
 
 <div class="header">
-    <?php if (!empty($config['logo_boutique']) && file_exists(__DIR__ . '/../uploads/logos/' . $config['logo_boutique'])): ?>
-        <img src="../uploads/logos/<?php echo htmlspecialchars($config['logo_boutique']); ?>" alt="Logo" class="logo">
+    <?php if (!empty($config['logo'])): ?>
+        <img src="../<?php echo htmlspecialchars($config['logo']); ?>" alt="Logo" class="logo">
     <?php endif; ?>
     <h1><?php echo htmlspecialchars($config['nom_boutique']); ?></h1>
-    <p><?php echo htmlspecialchars($config['adresse_boutique'] ?? ''); ?></p>
-    <p>Tél: <?php echo htmlspecialchars($config['telephone_boutique'] ?? ''); ?></p>
+    <p><?php echo htmlspecialchars($config['adresse'] ?? ''); ?></p>
+    <p>Tél: <?php echo htmlspecialchars($config['telephone'] ?? ''); ?></p>
 </div>
 
 <div class="info">
@@ -229,17 +234,13 @@ switch ($type) {
 <?php
 $html = ob_get_clean();
 
-// IMPORTANT : Cette version affiche en HTML uniquement
-// Pour une vraie génération PDF, installez une bibliothèque comme mPDF, TCPDF ou Dompdf
-// Exemple avec mPDF :
-// composer require mpdf/mpdf
-// $mpdf = new \Mpdf\Mpdf(['mode' => 'utf-8', 'format' => 'A4']);
-// $mpdf->WriteHTML($html);
-// $mpdf->Output('rapport_' . $type . '_' . date('Y-m-d') . '.pdf', 'I');
+// Headers pour téléchargement PDF
+$filename = 'rapport_' . $type . '_' . date('Y-m-d_His') . '.pdf';
+header('Content-Type: application/pdf; charset=UTF-8');
+header('Content-Disposition: inline; filename="' . $filename . '"');
+header('Cache-Control: must-revalidate, max-age=0');
+header('Pragma: public');
 
-echo '<div class="no-print" style="position: fixed; top: 0; left: 0; right: 0; background: #ffc107; color: #000; padding: 10px; text-align: center; z-index: 9999; border-bottom: 2px solid #ff9800;">';
-echo '<strong>⚠️ ATTENTION :</strong> Affichage HTML uniquement. Pour générer un vrai PDF, installez mPDF (composer require mpdf/mpdf). ';
-echo '<button onclick="window.print()" style="margin-left: 10px; padding: 5px 15px; background: #fff; border: 1px solid #333; cursor: pointer;">Imprimer en PDF</button>';
-echo '</div>';
-echo '<div style="margin-top: 60px;">' . $html . '</div>';
+// Afficher le HTML prêt à imprimer en PDF
+echo $html;
 ?>

@@ -6,6 +6,10 @@
 require_once 'protection_pages.php';
 
 $id_vente = $_GET['id'] ?? 0;
+$format = $_GET['format'] ?? 'thermal';
+if (!in_array($format, ['thermal', 'a4'], true)) {
+    $format = 'thermal';
+}
 
 // Récupérer les informations de la vente
 $vente = db_fetch_one("
@@ -55,66 +59,91 @@ $page_title = 'Facture ' . $vente['numero_facture'];
             background: #f5f5f5;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
+
         .invoice-container {
-            max-width: 800px;
+            max-width: <?php echo $format === 'thermal' ? '360px' : '800px'; ?>;
             margin: 20px auto;
             background: white;
             box-shadow: 0 0 20px rgba(0,0,0,0.1);
         }
-        
+
         .invoice-header {
             background: linear-gradient(135deg, <?php echo $couleur_primaire; ?>, <?php echo $couleur_secondaire; ?>);
             color: white;
-            padding: 30px;
+            padding: <?php echo $format === 'thermal' ? '16px' : '30px'; ?>;
         }
-        
+
         .invoice-body {
-            padding: 30px;
+            padding: <?php echo $format === 'thermal' ? '16px' : '30px'; ?>;
         }
-        
+
         .info-block {
-            margin-bottom: 20px;
+            margin-bottom: <?php echo $format === 'thermal' ? '12px' : '20px'; ?>;
         }
-        
+
         .invoice-table th {
             background: <?php echo $couleur_primaire; ?>20;
             color: <?php echo $couleur_primaire; ?>;
             font-weight: 600;
+            padding: <?php echo $format === 'thermal' ? '6px' : '10px'; ?>;
+            font-size: <?php echo $format === 'thermal' ? '12px' : '14px'; ?>;
         }
-        
+
+        .invoice-table td {
+            padding: <?php echo $format === 'thermal' ? '6px' : '10px'; ?>;
+            font-size: <?php echo $format === 'thermal' ? '12px' : '14px'; ?>;
+        }
+
         .total-row {
-            font-size: 1.2em;
+            font-size: <?php echo $format === 'thermal' ? '14px' : '1.2em'; ?>;
             font-weight: bold;
             background: <?php echo $couleur_primaire; ?>10;
         }
-        
+
         .footer-text {
             text-align: center;
             color: #666;
-            font-size: 0.9em;
-            padding: 20px;
+            font-size: <?php echo $format === 'thermal' ? '11px' : '0.9em'; ?>;
+            padding: <?php echo $format === 'thermal' ? '12px' : '20px'; ?>;
             border-top: 2px solid #eee;
-            margin-top: 30px;
+            margin-top: <?php echo $format === 'thermal' ? '16px' : '30px'; ?>;
         }
-        
+
         .badge-paid {
             background: #28a745;
             color: white;
-            padding: 5px 15px;
+            padding: <?php echo $format === 'thermal' ? '4px 10px' : '5px 15px'; ?>;
             border-radius: 20px;
-            font-size: 0.9em;
+            font-size: <?php echo $format === 'thermal' ? '11px' : '0.9em'; ?>;
         }
-        
+
         .qr-code {
-            width: 100px;
-            height: 100px;
+            width: <?php echo $format === 'thermal' ? '70px' : '100px'; ?>;
+            height: <?php echo $format === 'thermal' ? '70px' : '100px'; ?>;
             background: #f0f0f0;
             display: flex;
             align-items: center;
             justify-content: center;
             border: 1px solid #ddd;
         }
+
+        <?php if ($format === 'thermal'): ?>
+        body {
+            background: #fff;
+        }
+        .invoice-container {
+            box-shadow: none;
+            border: 1px dashed #ddd;
+        }
+        .invoice-header h1 { font-size: 18px; }
+        .invoice-header h2 { font-size: 20px; }
+        .invoice-header h4 { font-size: 16px; }
+        .invoice-body { padding-bottom: 12px; }
+        .invoice-table th:nth-child(1), .invoice-table td:nth-child(1) { width: 30px; }
+        .invoice-table th:nth-child(3), .invoice-table td:nth-child(3) { width: 80px; }
+        .invoice-table th:nth-child(4), .invoice-table td:nth-child(4) { width: 90px; }
+        .invoice-table th:nth-child(5), .invoice-table td:nth-child(5) { width: 90px; }
+        <?php endif; ?>
     </style>
 </head>
 <body>
@@ -124,13 +153,13 @@ $page_title = 'Facture ' . $vente['numero_facture'];
             <div class="row align-items-center">
                 <div class="col-md-8">
                     <h1 class="mb-0"><?php echo htmlspecialchars($config['nom_boutique']); ?></h1>
-                    <p class="mb-0"><?php echo htmlspecialchars($config['adresse_boutique'] ?? ''); ?></p>
+                    <p class="mb-0"><?php echo htmlspecialchars($config['adresse'] ?? ''); ?></p>
                     <p class="mb-0">
-                        <?php if (!empty($config['telephone_boutique'])): ?>
-                        Tél: <?php echo htmlspecialchars($config['telephone_boutique']); ?>
+                        <?php if (!empty($config['telephone'])): ?>
+                        Tél: <?php echo htmlspecialchars($config['telephone']); ?>
                         <?php endif; ?>
-                        <?php if (!empty($config['email_boutique'])): ?>
-                        | Email: <?php echo htmlspecialchars($config['email_boutique']); ?>
+                        <?php if (!empty($config['email'])): ?>
+                        | Email: <?php echo htmlspecialchars($config['email']); ?>
                         <?php endif; ?>
                     </p>
                 </div>
@@ -217,6 +246,12 @@ $page_title = 'Facture ' . $vente['numero_facture'];
 
     <!-- Buttons -->
     <div class="text-center my-4 no-print">
+        <div class="mb-2">
+            <div class="btn-group" role="group" aria-label="Choix format">
+                <a href="facture_impression.php?id=<?php echo $id_vente; ?>&format=thermal" class="btn btn-sm <?php echo $format === 'thermal' ? 'btn-primary' : 'btn-outline-primary'; ?>">Thermique (80mm)</a>
+                <a href="facture_impression.php?id=<?php echo $id_vente; ?>&format=a4" class="btn btn-sm <?php echo $format === 'a4' ? 'btn-primary' : 'btn-outline-primary'; ?>">A4</a>
+            </div>
+        </div>
         <button onclick="window.print()" class="btn btn-primary btn-lg me-2">
             <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2"/><path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4"/><rect x="7" y="13" width="10" height="8" rx="2"/></svg>
             Imprimer
