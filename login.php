@@ -20,7 +20,17 @@
  * ============================================================================
  */
 
+// Désactiver le cache pour éviter les problèmes de session/CSRF
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+header('Expires: 0');
+
 require_once __DIR__ . '/config/database.php';
+
+// Assurer la session pour le token CSRF
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Si déjà connecté, rediriger vers l'accueil
 if (is_logged_in()) {
@@ -44,8 +54,12 @@ $login_value = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Vérifier le token CSRF
-    if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
-        $error_message = 'Erreur de sécurité. Veuillez réessayer.';
+    $csrf_ok = isset($_POST['csrf_token']) && verify_csrf_token($_POST['csrf_token']);
+    
+    if (!$csrf_ok) {
+        // Logger le problème pour déboguer
+        error_log('CSRF token invalid: session_id=' . session_id() . ', POST token=' . ($_POST['csrf_token'] ?? 'ABSENT') . ', SESSION token=' . ($_SESSION['csrf_token'] ?? 'ABSENT'));
+        $error_message = 'Erreur de sécurité détectée. Veuillez recharger la page et réessayer. Si le problème persiste, videz le cache de votre navigateur.';
     } else {
         $login = trim($_POST['login'] ?? '');
         $password = $_POST['password'] ?? '';
@@ -56,8 +70,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             // Récupérer l'utilisateur
             $user = get_user_by_login($login);
-            
-            if ($user && password_verify($password, $user['mot_de_passe'])) {
+            $hash = $user['password_hash'] ?? null;      // schéma actuel
+            $legacy = $user['mot_de_passe'] ?? null;      // compat ancien schéma
+
+            $is_valid = false;
+            if ($user && !empty($hash) && password_verify($password, $hash)) {
+                $is_valid = true;
+            } elseif ($user && empty($hash) && !empty($legacy)) {
+                $looks_hashed = preg_match('/^\$2y\$/', $legacy) === 1;
+
+                if ($looks_hashed) {
+                    // Ancien stockage déjà bcrypté : vérifier avec password_verify
+                    if (password_verify($password, $legacy)) {
+                        $is_valid = true;
+                    }
+                } else {
+                    // Ancien stockage en clair : comparer exactement
+                    if (hash_equals($legacy, $password)) {
+                        $is_valid = true;
+                    }
+                }
+
+                // Migrer vers password_hash si validé
+                if ($is_valid) {
+                    try {
+                        $newHash = password_hash($password, PASSWORD_DEFAULT);
+                        db_update('utilisateurs', ['password_hash' => $newHash, 'mot_de_passe' => null], 'id_utilisateur = ?', [$user['id_utilisateur']]);
+                        $user['password_hash'] = $newHash;
+                    } catch (Exception $e) {
+                        error_log('Migration mot_de_passe -> password_hash: ' . $e->getMessage());
+                    }
+                }
+            }
+
+            if ($user && $is_valid) {
                 // Connexion réussie !
                 
                 // Vérifier si le compte est actif

@@ -7,114 +7,147 @@
  * ============================================================================
  */
 
+// Désactiver le cache pour éviter les données périmées
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+header('Expires: 0');
+
 require_once 'protection_pages.php';
 $page_title = 'Tableau de bord';
 
+// Helper pour éviter un 500 si une vue/table manque en prod
+function safe_query(callable $fn, $default) {
+    try {
+        return $fn();
+    } catch (Exception $e) {
+        error_log('accueil.php query error: ' . $e->getMessage());
+        return $default;
+    }
+}
+
 // Récupération des statistiques du jour
-$stats_jour = db_fetch_one("
-    SELECT 
-        COUNT(id_vente) as nombre_ventes,
-        COALESCE(SUM(montant_total), 0) as chiffre_affaires
-    FROM ventes 
-    WHERE DATE(date_vente) = CURDATE() AND statut = 'validee'
-");
+$stats_jour = safe_query(function() {
+    return db_fetch_one("
+        SELECT 
+            COUNT(id_vente) as nombre_ventes,
+            COALESCE(SUM(montant_total), 0) as chiffre_affaires
+        FROM ventes 
+        WHERE DATE(date_vente) = CURDATE() AND statut = 'validee'
+    ");
+}, ['nombre_ventes' => 0, 'chiffre_affaires' => 0]);
 
 // Récupération des statistiques du mois
-$stats_mois = db_fetch_one("
-    SELECT 
-        COUNT(id_vente) as nombre_ventes,
-        COALESCE(SUM(montant_total), 0) as chiffre_affaires
-    FROM ventes 
-    WHERE MONTH(date_vente) = MONTH(CURDATE()) 
-    AND YEAR(date_vente) = YEAR(CURDATE())
-    AND statut = 'validee'
-");
+$stats_mois = safe_query(function() {
+    return db_fetch_one("
+        SELECT 
+            COUNT(id_vente) as nombre_ventes,
+            COALESCE(SUM(montant_total), 0) as chiffre_affaires
+        FROM ventes 
+        WHERE MONTH(date_vente) = MONTH(CURDATE()) 
+        AND YEAR(date_vente) = YEAR(CURDATE())
+        AND statut = 'validee'
+    ");
+}, ['nombre_ventes' => 0, 'chiffre_affaires' => 0]);
 
 // Bénéfices (uniquement pour admin)
 $benefices_jour = 0;
 $benefices_mois = 0;
 if ($is_admin) {
-    $benefice_data_jour = db_fetch_one("
-        SELECT COALESCE(SUM(vd.benefice_ligne), 0) as benefice_total
-        FROM ventes_details vd
-        INNER JOIN ventes v ON vd.id_vente = v.id_vente
-        WHERE DATE(v.date_vente) = CURDATE() AND v.statut = 'validee'
-    ");
+    $benefice_data_jour = safe_query(function() {
+        return db_fetch_one("
+            SELECT COALESCE(SUM(vd.benefice_ligne), 0) as benefice_total
+            FROM ventes_details vd
+            INNER JOIN ventes v ON vd.id_vente = v.id_vente
+            WHERE DATE(v.date_vente) = CURDATE() AND v.statut = 'validee'
+        ");
+    }, ['benefice_total' => 0]);
     $benefices_jour = $benefice_data_jour['benefice_total'];
     
-    $benefice_data_mois = db_fetch_one("
-        SELECT COALESCE(SUM(vd.benefice_ligne), 0) as benefice_total
-        FROM ventes_details vd
-        INNER JOIN ventes v ON vd.id_vente = v.id_vente
-        WHERE MONTH(v.date_vente) = MONTH(CURDATE())
-        AND YEAR(v.date_vente) = YEAR(CURDATE())
-        AND v.statut = 'validee'
-    ");
+    $benefice_data_mois = safe_query(function() {
+        return db_fetch_one("
+            SELECT COALESCE(SUM(vd.benefice_ligne), 0) as benefice_total
+            FROM ventes_details vd
+            INNER JOIN ventes v ON vd.id_vente = v.id_vente
+            WHERE MONTH(v.date_vente) = MONTH(CURDATE())
+            AND YEAR(v.date_vente) = YEAR(CURDATE())
+            AND v.statut = 'validee'
+        ");
+    }, ['benefice_total' => 0]);
     $benefices_mois = $benefice_data_mois['benefice_total'];
 }
 
 // Statistiques stock
-$stats_stock = db_fetch_one("
-    SELECT 
-        COUNT(*) as total_produits,
-        COALESCE(SUM(quantite_stock), 0) as quantite_totale,
-        COALESCE(SUM(quantite_stock * prix_vente), 0) as valeur_stock
-    FROM produits 
-    WHERE est_actif = 1
-");
+$stats_stock = safe_query(function() {
+    return db_fetch_one("
+        SELECT 
+            COUNT(*) as total_produits,
+            COALESCE(SUM(quantite_stock), 0) as quantite_totale,
+            COALESCE(SUM(quantite_stock * prix_vente), 0) as valeur_stock
+        FROM produits 
+        WHERE est_actif = 1
+    ");
+}, ['total_produits' => 0, 'quantite_totale' => 0, 'valeur_stock' => 0]);
 
 // Produits en alerte
-$produits_alerte = db_fetch_all("
-    SELECT * FROM vue_produits_alertes 
-    ORDER BY 
-        CASE niveau_alerte
-            WHEN 'rupture' THEN 1
-            WHEN 'critique' THEN 2
-            WHEN 'faible' THEN 3
-        END
-    LIMIT 5
-");
+$produits_alerte = safe_query(function() {
+    return db_fetch_all("
+        SELECT * FROM vue_produits_alertes 
+        ORDER BY 
+            CASE niveau_alerte
+                WHEN 'rupture' THEN 1
+                WHEN 'critique' THEN 2
+                WHEN 'faible' THEN 3
+            END
+        LIMIT 5
+    ");
+}, []);
 
 // Dernières ventes
-$dernieres_ventes = db_fetch_all("
-    SELECT v.*, c.nom_client, u.nom_complet as vendeur
-    FROM ventes v
-    LEFT JOIN clients c ON v.id_client = c.id_client
-    LEFT JOIN utilisateurs u ON v.id_vendeur = u.id_utilisateur
-    WHERE v.statut = 'validee'
-    ORDER BY v.date_vente DESC
-    LIMIT 5
-");
+$dernieres_ventes = safe_query(function() {
+    return db_fetch_all("
+        SELECT v.*, c.nom_client, u.nom_complet as vendeur
+        FROM ventes v
+        LEFT JOIN clients c ON v.id_client = c.id_client
+        LEFT JOIN utilisateurs u ON v.id_vendeur = u.id_utilisateur
+        WHERE v.statut = 'validee'
+        ORDER BY v.date_vente DESC
+        LIMIT 5
+    ");
+}, []);
 
 // Top 5 produits du mois
-$top_produits = db_fetch_all("
-    SELECT 
-        p.nom_produit,
-        p.code_produit,
-        SUM(vd.quantite) as quantite_vendue,
-        SUM(vd.prix_total) as montant_total
-    FROM ventes_details vd
-    INNER JOIN ventes v ON vd.id_vente = v.id_vente
-    INNER JOIN produits p ON vd.id_produit = p.id_produit
-    WHERE MONTH(v.date_vente) = MONTH(CURDATE())
-    AND YEAR(v.date_vente) = YEAR(CURDATE())
-    AND v.statut = 'validee'
-    GROUP BY p.id_produit
-    ORDER BY quantite_vendue DESC
-    LIMIT 5
-");
+$top_produits = safe_query(function() {
+    return db_fetch_all("
+        SELECT 
+            p.nom_produit,
+            p.code_produit,
+            SUM(vd.quantite) as quantite_vendue,
+            SUM(vd.prix_total) as montant_total
+        FROM ventes_details vd
+        INNER JOIN ventes v ON vd.id_vente = v.id_vente
+        INNER JOIN produits p ON vd.id_produit = p.id_produit
+        WHERE MONTH(v.date_vente) = MONTH(CURDATE())
+        AND YEAR(v.date_vente) = YEAR(CURDATE())
+        AND v.statut = 'validee'
+        GROUP BY p.id_produit
+        ORDER BY quantite_vendue DESC
+        LIMIT 5
+    ");
+}, []);
 
 // Données pour les graphiques - CA des 7 derniers jours
-$ca_7jours = db_fetch_all("
-    SELECT 
-        DATE(date_vente) as date,
-        COALESCE(SUM(montant_total), 0) as total
-    FROM ventes
-    WHERE date_vente >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-    AND statut = 'validee'
-    GROUP BY DATE(date_vente)
-    ORDER BY date ASC
-");
+$ca_7jours = safe_query(function() {
+    return db_fetch_all("
+        SELECT 
+            DATE(date_vente) as date,
+            COALESCE(SUM(montant_total), 0) as total
+        FROM ventes
+        WHERE date_vente >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+        AND statut = 'validee'
+        GROUP BY DATE(date_vente)
+        ORDER BY date ASC
+    ");
+}, []);
 
 // Préparer les données pour les 7 derniers jours (même si pas de ventes)
 $dates_ca = [];
@@ -134,18 +167,20 @@ for ($i = 6; $i >= 0; $i--) {
 }
 
 // Répartition des ventes par mode de paiement (ce mois)
-$repartition_paiement = db_fetch_all("
-    SELECT 
-        mode_paiement,
-        COUNT(*) as nombre,
-        COALESCE(SUM(montant_total), 0) as total
-    FROM ventes
-    WHERE MONTH(date_vente) = MONTH(CURDATE())
-    AND YEAR(date_vente) = YEAR(CURDATE())
-    AND statut = 'validee'
-    GROUP BY mode_paiement
-    ORDER BY total DESC
-");
+$repartition_paiement = safe_query(function() {
+    return db_fetch_all("
+        SELECT 
+            mode_paiement,
+            COUNT(*) as nombre,
+            COALESCE(SUM(montant_total), 0) as total
+        FROM ventes
+        WHERE MONTH(date_vente) = MONTH(CURDATE())
+        AND YEAR(date_vente) = YEAR(CURDATE())
+        AND statut = 'validee'
+        GROUP BY mode_paiement
+        ORDER BY total DESC
+    ");
+}, []);
 
 include 'header.php';
 ?>

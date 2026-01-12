@@ -1,5 +1,5 @@
 # ============================================================================
-# CONFIGURATION HTACCESS - STORESUITE
+# CONFIGURATION HTACCESS - STORESUITE PRODUCTION (HOSTINGER)
 # ============================================================================
 
 # Activer le moteur de réécriture
@@ -20,7 +20,7 @@ ErrorDocument 403 /error_500.php
 Options -Indexes
 
 # Protéger les fichiers sensibles
-<FilesMatch "(^\.htaccess|^\.git|\.log$|\.sql$|\.md$)">
+<FilesMatch "(^\.htaccess|^\.git|\.log$|\.sql$|\.md$|diagnostic|test_)">
     Order Allow,Deny
     Deny from all
 </FilesMatch>
@@ -44,6 +44,14 @@ Options -Indexes
     RewriteCond %{QUERY_STRING} GLOBALS(=|\[|\%[0-9A-Z]{0,2}) [OR]
     RewriteCond %{QUERY_STRING} _REQUEST(=|\[|\%[0-9A-Z]{0,2})
     RewriteRule .* - [F,L]
+</IfModule>
+
+# ============================================================================
+# REDIRECTION HTTPS (ACTIVÉE POUR PRODUCTION)
+# ============================================================================
+<IfModule mod_rewrite.c>
+    RewriteCond %{HTTPS} off
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 </IfModule>
 
 # ============================================================================
@@ -87,22 +95,30 @@ Options -Indexes
     php_value max_input_time 300
     
     # Désactiver l'affichage des erreurs en production
-    # php_flag display_errors Off
-    # php_flag display_startup_errors Off
+    php_flag display_errors Off
+    php_flag display_startup_errors Off
 </IfModule>
 
 # ============================================================================
-# REDIRECTION VERS HTTPS (Désactivé pour localhost, activer en production)
+# HEADERS DE SÉCURITÉ
 # ============================================================================
-# Décommentez ces lignes UNIQUEMENT sur le serveur de production (Hostinger)
-# <IfModule mod_rewrite.c>
-#     RewriteCond %{HTTPS} off
-#     RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-# </IfModule>
+<IfModule mod_headers.c>
+    # Protection XSS
+    Header set X-XSS-Protection "1; mode=block"
+    
+    # Empêcher le MIME sniffing
+    Header set X-Content-Type-Options "nosniff"
+    
+    # Clickjacking protection
+    Header set X-Frame-Options "SAMEORIGIN"
+    
+    # Referrer policy
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
 
 # ============================================================================
 # URL REWRITING (Optionnel - pour URLs propres)
 # ============================================================================
 # RewriteRule ^login$ login.php [L]
 # RewriteRule ^accueil$ accueil.php [L]
-# RewriteRule ^vente$ vente_professionnel.php [L]
+# RewriteRule ^vente$ vente.php [L]

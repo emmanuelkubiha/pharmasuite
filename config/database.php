@@ -306,9 +306,10 @@ try {
      * @return array|false
      */
     function get_user_by_login($login) {
+        // Permettre la connexion par login ou email
         return db_fetch_one(
-            "SELECT * FROM utilisateurs WHERE login = ? AND est_actif = 1",
-            [$login]
+            "SELECT * FROM utilisateurs WHERE (login = ? OR email = ?) AND est_actif = 1 LIMIT 1",
+            [$login, $login]
         );
     }
     

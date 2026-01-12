@@ -18,13 +18,18 @@
  * ============================================================================
  */
 
+// Démarrage de la session si pas encore démarrée
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 // ============================================================================
 // CONFIGURATION DE LA BASE DE DONNÉES
 // ============================================================================
 define('DB_HOST', 'localhost');              // Hôte de la base de données
 define('DB_NAME', 'storesuite');             // Nom de la base de données
 define('DB_USER', 'root');                   // Utilisateur MySQL
-define('DB_PASS', 'root');                   // Mot de passe MySQL (MAMP utilise 'root')
+define('DB_PASS', '');                       // Mot de passe MySQL
 define('DB_CHARSET', 'utf8mb4');             // Encodage des caractères
 
 // ============================================================================
@@ -34,7 +39,7 @@ define('DB_CHARSET', 'utf8mb4');             // Encodage des caractères
 define('ROOT_PATH', dirname(__DIR__));
 
 // URL de base du site (à adapter selon votre configuration)
-define('BASE_URL', 'http://localhost:8888/STORESuite/');
+define('BASE_URL', 'http://localhost/STORESuite/');
 
 // Chemins vers les dossiers importants
 define('UPLOAD_PATH', ROOT_PATH . '/uploads/');
@@ -63,7 +68,6 @@ define('LOGIN_BLOCK_DURATION', 15);
 // Nom de l'application
 define('APP_NAME', 'STORESUITE');
 define('APP_VERSION', '2.0.0');
-define('DEVISE', 'USD');                     // Devise par défaut
 
 // Fuseau horaire par défaut
 date_default_timezone_set('Africa/Lubumbashi');
@@ -106,15 +110,6 @@ define('MAX_FILE_SIZE', 5242880);
 
 // Extensions autorisées pour les images
 define('ALLOWED_IMAGE_EXTENSIONS', ['jpg', 'jpeg', 'png', 'gif', 'webp']);
-
-// ============================================================================
-// CONFIGURATION SUPPLÉMENTAIRE
-// ============================================================================
-// Configuration TVA
-define('TVA_STANDARD', 0.16);                // 16% de TVA standard
-
-// Configuration de la pagination
-define('ITEMS_PER_PAGE', 20);                // Nombre d'éléments par page
 
 // ============================================================================
 // FONCTIONS UTILITAIRES GLOBALES
