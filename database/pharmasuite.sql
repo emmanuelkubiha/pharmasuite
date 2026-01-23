@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : localhost:8889
--- Généré le : jeu. 15 jan. 2026 à 10:56
+-- Généré le : ven. 23 jan. 2026 à 18:09
 -- Version du serveur : 8.0.40
 -- Version de PHP : 8.3.14
 
@@ -18,8 +18,21 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Base de données : `storesuite`
+-- Base de données : `pharmasuite`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `caisses`
+--
+
+CREATE TABLE `caisses` (
+  `id_caisse` int NOT NULL,
+  `nom` varchar(100) NOT NULL,
+  `solde_initial` decimal(10,2) DEFAULT '0.00',
+  `solde_actuel` decimal(10,2) DEFAULT '0.00'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -29,10 +42,10 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `categories` (
   `id_categorie` int NOT NULL,
-  `nom_categorie` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nom de la catégorie',
-  `description` text COLLATE utf8mb4_unicode_ci COMMENT 'Description de la catégorie',
-  `icone` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Icône ou classe CSS',
-  `couleur` varchar(7) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Couleur associée (format HEX)',
+  `nom_categorie` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nom de la catégorie',
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Description de la catégorie',
+  `icone` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Icône ou classe CSS',
+  `couleur` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Couleur associée (format HEX)',
   `ordre_affichage` int DEFAULT '0' COMMENT 'Ordre d''affichage',
   `est_actif` tinyint(1) DEFAULT '1' COMMENT '0=Inactif, 1=Actif',
   `date_creation` datetime DEFAULT CURRENT_TIMESTAMP,
@@ -58,16 +71,16 @@ INSERT INTO `categories` (`id_categorie`, `nom_categorie`, `description`, `icone
 
 CREATE TABLE `clients` (
   `id_client` int NOT NULL,
-  `nom_client` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nom du client',
-  `telephone` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Téléphone',
-  `email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Email',
-  `adresse` text COLLATE utf8mb4_unicode_ci COMMENT 'Adresse complète',
-  `type_client` enum('particulier','entreprise') COLLATE utf8mb4_unicode_ci DEFAULT 'particulier',
-  `numero_fiscal` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Numéro fiscal (pour entreprises)',
+  `nom_client` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nom du client',
+  `telephone` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Téléphone',
+  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Email',
+  `adresse` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Adresse complète',
+  `type_client` enum('particulier','entreprise') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'particulier',
+  `numero_fiscal` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Numéro fiscal (pour entreprises)',
   `total_achats` decimal(15,2) DEFAULT '0.00' COMMENT 'Total des achats',
   `nombre_achats` int DEFAULT '0' COMMENT 'Nombre d''achats',
   `date_dernier_achat` datetime DEFAULT NULL,
-  `notes` text COLLATE utf8mb4_unicode_ci COMMENT 'Notes sur le client',
+  `notes` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Notes sur le client',
   `est_actif` tinyint(1) DEFAULT '1',
   `date_creation` datetime DEFAULT CURRENT_TIMESTAMP,
   `date_modification` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -81,21 +94,21 @@ CREATE TABLE `clients` (
 
 CREATE TABLE `configuration` (
   `id_config` int NOT NULL,
-  `nom_boutique` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nom de la boutique/entreprise',
-  `slogan` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Slogan ou description courte',
-  `logo` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Chemin vers le fichier logo',
-  `couleur_primaire` varchar(7) COLLATE utf8mb4_unicode_ci DEFAULT '#e6e64c' COMMENT 'Couleur principale (format HEX)',
-  `couleur_secondaire` varchar(7) COLLATE utf8mb4_unicode_ci DEFAULT '#556a94' COMMENT 'Couleur secondaire (format HEX)',
-  `adresse` text COLLATE utf8mb4_unicode_ci COMMENT 'Adresse complète de l''entreprise',
-  `telephone` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Numéro(s) de téléphone',
-  `email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Adresse email',
-  `site_web` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Site web de l''entreprise',
-  `num_registre_commerce` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Numéro d''enregistrement (RCCM, etc.)',
-  `num_impot` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Numéro fiscal/TVA',
-  `devise` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT '$' COMMENT 'Symbole de la devise utilisée',
+  `nom_boutique` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nom de la boutique/entreprise',
+  `slogan` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Slogan ou description courte',
+  `logo` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Chemin vers le fichier logo',
+  `couleur_primaire` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT '#e6e64c' COMMENT 'Couleur principale (format HEX)',
+  `couleur_secondaire` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT '#556a94' COMMENT 'Couleur secondaire (format HEX)',
+  `adresse` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Adresse complète de l''entreprise',
+  `telephone` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Numéro(s) de téléphone',
+  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Adresse email',
+  `site_web` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Site web de l''entreprise',
+  `num_registre_commerce` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Numéro d''enregistrement (RCCM, etc.)',
+  `num_impot` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Numéro fiscal/TVA',
+  `devise` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT '$' COMMENT 'Symbole de la devise utilisée',
   `taux_tva` decimal(5,2) DEFAULT '0.00' COMMENT 'Taux de TVA par défaut (%)',
-  `fuseau_horaire` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT 'Africa/Lubumbashi' COMMENT 'Fuseau horaire',
-  `langue` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT 'fr' COMMENT 'Langue du système (fr, en, etc.)',
+  `fuseau_horaire` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'Africa/Lubumbashi' COMMENT 'Fuseau horaire',
+  `langue` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'fr' COMMENT 'Langue du système (fr, en, etc.)',
   `est_configure` tinyint(1) DEFAULT '0' COMMENT '0=Non configuré, 1=Configuré',
   `date_configuration` datetime DEFAULT NULL COMMENT 'Date de première configuration',
   `date_modification` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -103,8 +116,25 @@ CREATE TABLE `configuration` (
 
 --
 -- Déchargement des données de la table `configuration`
--- (Vide - Configuration initiale via setup.php)
 --
+
+INSERT INTO `configuration` (`id_config`, `nom_boutique`, `slogan`, `logo`, `couleur_primaire`, `couleur_secondaire`, `adresse`, `telephone`, `email`, `site_web`, `num_registre_commerce`, `num_impot`, `devise`, `taux_tva`, `fuseau_horaire`, `langue`, `est_configure`, `date_configuration`, `date_modification`) VALUES
+(1, 'CALEB SHOP', 'votre boutique d\'excellence', 'uploads/logos/logo_boutique.png', '#206bc4', '#ffffff', '', '', '', 'https://www.test.com', 'RCCM/TEST/123', 'IMP-12345', 'CDF', 0.00, 'Africa/Lubumbashi', 'fr', 1, '2026-01-09 09:42:27', '2026-01-10 22:53:43');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `depenses`
+--
+
+CREATE TABLE `depenses` (
+  `id_depense` int NOT NULL,
+  `date_depense` datetime DEFAULT CURRENT_TIMESTAMP,
+  `montant` decimal(10,2) NOT NULL,
+  `motif` varchar(255) NOT NULL,
+  `utilisateur_id` int NOT NULL,
+  `caisse_id` int DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -114,12 +144,12 @@ CREATE TABLE `configuration` (
 
 CREATE TABLE `depots` (
   `id_depot` int NOT NULL,
-  `nom_depot` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nom du dépôt/emplacement',
-  `description` text COLLATE utf8mb4_unicode_ci COMMENT 'Description de l''emplacement',
-  `type_depot` enum('magasin','depot','entrepot','autre') COLLATE utf8mb4_unicode_ci DEFAULT 'depot' COMMENT 'Type d''emplacement',
-  `adresse` text COLLATE utf8mb4_unicode_ci COMMENT 'Adresse physique',
-  `responsable` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Responsable du dépôt',
-  `telephone` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Téléphone du dépôt',
+  `nom_depot` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nom du dépôt/emplacement',
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Description de l''emplacement',
+  `type_depot` enum('magasin','depot','entrepot','autre') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'depot' COMMENT 'Type d''emplacement',
+  `adresse` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Adresse physique',
+  `responsable` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Responsable du dépôt',
+  `telephone` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Téléphone du dépôt',
   `capacite` int DEFAULT NULL COMMENT 'Capacité maximale (unités)',
   `est_principal` tinyint(1) DEFAULT '0' COMMENT '1=Dépôt principal (Magasin)',
   `est_actif` tinyint(1) DEFAULT '1' COMMENT '0=Inactif, 1=Actif',
@@ -133,7 +163,8 @@ CREATE TABLE `depots` (
 --
 
 INSERT INTO `depots` (`id_depot`, `nom_depot`, `description`, `type_depot`, `adresse`, `responsable`, `telephone`, `capacite`, `est_principal`, `est_actif`, `ordre_affichage`, `date_creation`, `date_modification`) VALUES
-(1, 'Magasin', 'Emplacement principal de vente (par défaut)', 'magasin', NULL, NULL, NULL, NULL, 1, 1, 1, NOW(), NOW());
+(1, 'Magasin', 'Emplacement principal de vente (par défaut)', 'magasin', NULL, NULL, NULL, NULL, 0, 1, 1, '2026-01-15 09:11:04', '2026-01-15 07:52:59'),
+(2, 'DEpots Industriel', 'Pour le stockage 2', 'depot', 'Industriel', NULL, NULL, NULL, 1, 1, 0, '2026-01-15 09:52:59', '2026-01-15 07:52:59');
 
 -- --------------------------------------------------------
 
@@ -145,7 +176,7 @@ CREATE TABLE `details_vente` (
   `id_detail` int NOT NULL,
   `id_vente` int NOT NULL COMMENT 'Référence à la vente',
   `id_produit` int NOT NULL COMMENT 'Produit vendu',
-  `nom_produit` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nom du produit',
+  `nom_produit` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nom du produit',
   `quantite` int NOT NULL DEFAULT '1' COMMENT 'Quantité vendue',
   `prix_unitaire` decimal(15,2) NOT NULL COMMENT 'Prix unitaire',
   `prix_achat_unitaire` decimal(15,2) NOT NULL COMMENT 'Prix achat',
@@ -157,8 +188,11 @@ CREATE TABLE `details_vente` (
 
 --
 -- Déchargement des données de la table `details_vente`
--- (Vide - Aucune vente initiale)
 --
+
+INSERT INTO `details_vente` (`id_detail`, `id_vente`, `id_produit`, `nom_produit`, `quantite`, `prix_unitaire`, `prix_achat_unitaire`, `prix_total`, `benefice_ligne`, `remise_ligne`, `date_creation`) VALUES
+(11, 11, 1, '', 1, 1200.00, 0.00, 0.00, 0.00, 0.00, '2026-01-10 12:18:06'),
+(12, 12, 1, '', 1, 1200.00, 0.00, 0.00, 0.00, 0.00, '2026-01-11 19:58:32');
 
 -- --------------------------------------------------------
 
@@ -168,15 +202,15 @@ CREATE TABLE `details_vente` (
 
 CREATE TABLE `fournisseurs` (
   `id_fournisseur` int NOT NULL,
-  `nom_fournisseur` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nom du fournisseur',
-  `contact` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Personne de contact',
-  `telephone` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Numéro de téléphone',
-  `email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Adresse email',
-  `adresse` text COLLATE utf8mb4_unicode_ci COMMENT 'Adresse complète',
-  `pays` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Pays',
-  `ville` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Ville',
-  `conditions_paiement` text COLLATE utf8mb4_unicode_ci COMMENT 'Conditions de paiement',
-  `notes` text COLLATE utf8mb4_unicode_ci COMMENT 'Notes diverses',
+  `nom_fournisseur` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nom du fournisseur',
+  `contact` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Personne de contact',
+  `telephone` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Numéro de téléphone',
+  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Adresse email',
+  `adresse` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Adresse complète',
+  `pays` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Pays',
+  `ville` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Ville',
+  `conditions_paiement` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Conditions de paiement',
+  `notes` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Notes diverses',
   `est_actif` tinyint(1) DEFAULT '1' COMMENT '0=Inactif, 1=Actif',
   `date_creation` datetime DEFAULT CURRENT_TIMESTAMP,
   `date_modification` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -198,13 +232,13 @@ INSERT INTO `fournisseurs` (`id_fournisseur`, `nom_fournisseur`, `contact`, `tel
 CREATE TABLE `logs_activites` (
   `id_log` int NOT NULL,
   `id_utilisateur` int DEFAULT NULL,
-  `type_action` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Type d''action (connexion, vente, modification, etc.)',
-  `description` text COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Description détaillée de l''action',
-  `ip_address` varchar(45) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Adresse IP',
-  `user_agent` text COLLATE utf8mb4_unicode_ci COMMENT 'Navigateur/Device',
+  `type_action` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Type d''action (connexion, vente, modification, etc.)',
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Description détaillée de l''action',
+  `ip_address` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Adresse IP',
+  `user_agent` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Navigateur/Device',
   `donnees_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin COMMENT 'Données supplémentaires en JSON',
   `date_action` datetime DEFAULT CURRENT_TIMESTAMP
-) ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Déchargement des données de la table `logs_activites`
@@ -270,7 +304,24 @@ INSERT INTO `logs_activites` (`id_log`, `id_utilisateur`, `type_action`, `descri
 (57, 3, 'deconnexion', 'Déconnexion de EMMANUEL BARAKA', '::1', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', NULL, '2026-01-13 12:04:40'),
 (58, 3, 'connexion', 'Connexion réussie de EMMANUEL BARAKA', '::1', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', NULL, '2026-01-13 12:10:26'),
 (59, 3, 'deconnexion', 'Déconnexion de EMMANUEL BARAKA', '::1', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', NULL, '2026-01-13 12:10:31'),
-(60, 3, 'connexion', 'Connexion réussie de EMMANUEL BARAKA', '::1', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', NULL, '2026-01-15 08:46:27');
+(60, 3, 'connexion', 'Connexion réussie de EMMANUEL BARAKA', '::1', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', NULL, '2026-01-15 08:46:27'),
+(61, NULL, 'connexion_echouee', 'Tentative de connexion échouée pour l\'utilisateur : admin', '::1', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-01-23 13:48:58'),
+(62, 3, 'connexion', 'Connexion réussie de EMMANUEL BARAKA', '::1', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', NULL, '2026-01-23 13:50:53');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `lots_medicaments`
+--
+
+CREATE TABLE `lots_medicaments` (
+  `id_lot` int NOT NULL,
+  `id_produit` int NOT NULL,
+  `numero_lot` varchar(100) NOT NULL,
+  `date_peremption` date NOT NULL,
+  `quantite` int NOT NULL DEFAULT '0',
+  `date_entree` date DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -282,11 +333,11 @@ CREATE TABLE `mouvements` (
   `id_mouvement` int NOT NULL,
   `id_produit` int NOT NULL,
   `id_utilisateur` int NOT NULL,
-  `type_mouvement` enum('entree','sortie','ajustement','vente') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `type_mouvement` enum('entree','sortie','ajustement','vente') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `quantite` int NOT NULL,
   `prix_unitaire` decimal(15,2) DEFAULT NULL,
-  `reference` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Numéro facture ou bon',
-  `motif` text COLLATE utf8mb4_unicode_ci,
+  `reference` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Numéro facture ou bon',
+  `motif` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `date_mouvement` datetime DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -299,10 +350,11 @@ CREATE TABLE `mouvements` (
 CREATE TABLE `mouvements_stock` (
   `id_mouvement` int NOT NULL,
   `id_produit` int NOT NULL COMMENT 'Produit concerné',
+  `id_lot` int DEFAULT NULL,
   `id_depot_source` int DEFAULT NULL COMMENT 'Dépôt source (pour transferts)',
   `id_depot_destination` int DEFAULT NULL COMMENT 'Dépôt destination',
   `id_fournisseur` int DEFAULT NULL COMMENT 'Fournisseur (pour entrées)',
-  `type_mouvement` enum('entree','sortie','ajustement','retour','transfert','inventaire','perte') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `type_mouvement` enum('entree','sortie','ajustement','retour','transfert','inventaire','perte') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `quantite` int NOT NULL COMMENT 'Quantité du mouvement',
   `quantite_avant` int NOT NULL COMMENT 'Stock avant le mouvement',
   `quantite_apres` int NOT NULL COMMENT 'Stock après le mouvement',
@@ -310,15 +362,27 @@ CREATE TABLE `mouvements_stock` (
   `cout_total` decimal(15,2) DEFAULT NULL COMMENT 'Coût total du mouvement',
   `id_vente` int DEFAULT NULL COMMENT 'Référence vente si sortie',
   `id_utilisateur` int NOT NULL COMMENT 'Utilisateur qui a fait l''opération',
-  `motif` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Raison du mouvement',
-  `notes` text COLLATE utf8mb4_unicode_ci,
+  `motif` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Raison du mouvement',
+  `notes` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `date_mouvement` datetime DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Historique des mouvements de stock';
 
 --
 -- Déchargement des données de la table `mouvements_stock`
--- (Vide - Aucun mouvement initial)
 --
+
+INSERT INTO `mouvements_stock` (`id_mouvement`, `id_produit`, `id_lot`, `id_depot_source`, `id_depot_destination`, `id_fournisseur`, `type_mouvement`, `quantite`, `quantite_avant`, `quantite_apres`, `cout_unitaire`, `cout_total`, `id_vente`, `id_utilisateur`, `motif`, `notes`, `date_mouvement`) VALUES
+(9, 1, NULL, NULL, NULL, NULL, 'sortie', 1, 5, 4, NULL, NULL, NULL, 3, 'Vente FAC-20260109-0001', NULL, '2026-01-09 21:29:28'),
+(10, 1, NULL, NULL, NULL, NULL, 'sortie', 1, 4, 3, NULL, NULL, NULL, 3, 'Vente FAC-20260109-0002', NULL, '2026-01-09 21:53:25'),
+(11, 1, NULL, NULL, NULL, NULL, 'entree', 1, 4, 5, NULL, NULL, NULL, 3, 'Annulation vente - Facture FAC-20260109-0002', NULL, '2026-01-10 07:28:25'),
+(12, 1, NULL, NULL, NULL, NULL, 'sortie', 1, 4, 3, NULL, NULL, NULL, 3, 'Restauration vente - Facture FAC-20260109-0002', NULL, '2026-01-10 07:44:56'),
+(13, 1, NULL, NULL, NULL, NULL, 'sortie', 1, 3, 2, NULL, NULL, NULL, 3, 'Vente FAC-20260110-0003', NULL, '2026-01-10 08:53:49'),
+(14, 1, NULL, NULL, NULL, NULL, 'sortie', 1, 2, 1, NULL, NULL, NULL, 3, 'Vente FAC-20260110-0004', NULL, '2026-01-10 08:54:55'),
+(15, 1, NULL, NULL, NULL, NULL, 'entree', 1, 2, 3, NULL, NULL, NULL, 3, 'Annulation vente - Facture FAC-20260109-0002', NULL, '2026-01-10 07:57:09'),
+(16, 1, NULL, NULL, NULL, NULL, 'entree', 1, 3, 4, NULL, NULL, NULL, 3, 'Annulation vente - Facture FAC-20260110-0003', NULL, '2026-01-10 07:57:20'),
+(17, 1, NULL, NULL, NULL, NULL, 'sortie', 1, 3, 2, NULL, NULL, NULL, 3, 'Vente FAC-20260110-0001', NULL, '2026-01-10 13:18:06'),
+(18, 1, NULL, NULL, NULL, NULL, 'sortie', 1, 2, 1, NULL, NULL, NULL, 4, 'Vente FAC-20260111-0002', NULL, '2026-01-11 20:58:32'),
+(20, 1, NULL, 1, NULL, NULL, 'ajustement', 5, 1, 6, NULL, NULL, NULL, 3, '', NULL, '2026-01-15 00:00:00');
 
 -- --------------------------------------------------------
 
@@ -328,19 +392,22 @@ CREATE TABLE `mouvements_stock` (
 
 CREATE TABLE `notifications` (
   `id_notification` int NOT NULL,
-  `type_notification` enum('stock_faible','stock_critique','rupture_stock','vente_importante','systeme') COLLATE utf8mb4_unicode_ci NOT NULL,
-  `titre` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `message` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `type_notification` enum('stock_faible','stock_critique','rupture_stock','vente_importante','systeme') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `titre` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `id_produit` int DEFAULT NULL COMMENT 'Produit concerné si applicable',
-  `niveau_urgence` enum('info','avertissement','urgent') COLLATE utf8mb4_unicode_ci DEFAULT 'info',
+  `niveau_urgence` enum('info','avertissement','urgent') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'info',
   `est_lue` tinyint(1) DEFAULT '0' COMMENT '0=Non lue, 1=Lue',
   `date_creation` datetime DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Notifications système';
 
 --
 -- Déchargement des données de la table `notifications`
--- (Vide - Aucune notification initiale)
 --
+
+INSERT INTO `notifications` (`id_notification`, `type_notification`, `titre`, `message`, `id_produit`, `niveau_urgence`, `est_lue`, `date_creation`) VALUES
+(1, 'systeme', 'Bienvenue !', 'Votre système de gestion de stock a été configuré avec succès. Vous pouvez maintenant commencer à ajouter vos produits et effectuer vos ventes.', NULL, 'info', 0, '2026-01-09 09:33:05'),
+(2, 'systeme', 'Bienvenue !', 'Votre système de gestion de stock a été configuré avec succès. Vous pouvez maintenant commencer à ajouter vos produits et effectuer vos ventes.', NULL, 'info', 0, '2026-01-09 09:42:27');
 
 -- --------------------------------------------------------
 
@@ -350,9 +417,9 @@ CREATE TABLE `notifications` (
 
 CREATE TABLE `produits` (
   `id_produit` int NOT NULL,
-  `code_produit` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Code/Référence unique du produit',
-  `nom_produit` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nom du produit',
-  `description` text COLLATE utf8mb4_unicode_ci COMMENT 'Description détaillée',
+  `code_produit` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Code/Référence unique du produit',
+  `nom_produit` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nom du produit',
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Description détaillée',
   `id_categorie` int DEFAULT NULL COMMENT 'Catégorie du produit',
   `id_fournisseur_principal` int DEFAULT NULL COMMENT 'Fournisseur principal du produit',
   `prix_achat` decimal(15,2) NOT NULL DEFAULT '0.00' COMMENT 'Prix d''achat (VISIBLE ADMIN SEULEMENT)',
@@ -361,10 +428,14 @@ CREATE TABLE `produits` (
   `quantite_stock` int NOT NULL DEFAULT '0' COMMENT 'Quantité actuelle en stock',
   `seuil_alerte` int DEFAULT '10' COMMENT 'Seuil pour alerte stock faible',
   `seuil_critique` int DEFAULT '5' COMMENT 'Seuil critique (alerte rouge)',
-  `unite_mesure` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT 'pièce' COMMENT 'Unité (pièce, kg, litre, etc.)',
-  `image` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Image du produit',
-  `code_barre` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Code-barres pour scanner',
-  `emplacement` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Emplacement dans le magasin',
+  `unite_mesure` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'pièce' COMMENT 'Unité (pièce, kg, litre, etc.)',
+  `dosage` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `conditionnement` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `date_peremption` date DEFAULT NULL,
+  `fabriquant` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `image` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Image du produit',
+  `code_barre` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Code-barres pour scanner',
+  `emplacement` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Emplacement dans le magasin',
   `date_entree` date DEFAULT NULL COMMENT 'Date dernière entrée en stock',
   `date_derniere_vente` datetime DEFAULT NULL COMMENT 'Date de la dernière vente',
   `nombre_ventes` int DEFAULT '0' COMMENT 'Nombre total de ventes',
@@ -375,8 +446,10 @@ CREATE TABLE `produits` (
 
 --
 -- Déchargement des données de la table `produits`
--- (Vide - Aucun produit initial)
 --
+
+INSERT INTO `produits` (`id_produit`, `code_produit`, `nom_produit`, `description`, `id_categorie`, `id_fournisseur_principal`, `prix_achat`, `prix_vente`, `prix_vente_min`, `quantite_stock`, `seuil_alerte`, `seuil_critique`, `unite_mesure`, `dosage`, `conditionnement`, `date_peremption`, `fabriquant`, `image`, `code_barre`, `emplacement`, `date_entree`, `date_derniere_vente`, `nombre_ventes`, `est_actif`, `date_creation`, `date_modification`) VALUES
+(1, NULL, 'Television Samsung 32\'', '', 1, NULL, 500.00, 1200.00, NULL, 6, 1, 5, 'pièce', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 1, '2026-01-09 10:24:34', '2026-01-15 10:23:32');
 
 -- --------------------------------------------------------
 
@@ -395,8 +468,10 @@ CREATE TABLE `stock_par_depot` (
 
 --
 -- Déchargement des données de la table `stock_par_depot`
--- (Vide - Aucun stock initial)
 --
+
+INSERT INTO `stock_par_depot` (`id_stock`, `id_produit`, `id_depot`, `quantite`, `seuil_alerte`, `date_derniere_maj`) VALUES
+(1, 1, 1, 6, 1, '2026-01-15 12:23:32');
 
 --
 -- Déclencheurs `stock_par_depot`
@@ -449,13 +524,13 @@ DELIMITER ;
 
 CREATE TABLE `utilisateurs` (
   `id_utilisateur` int NOT NULL,
-  `nom_complet` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nom complet de l''utilisateur',
-  `login` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Identifiant de connexion (unique)',
-  `mot_de_passe` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Mot de passe hashé (password_hash)',
-  `email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Adresse email',
-  `telephone` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Numéro de téléphone',
+  `nom_complet` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nom complet de l''utilisateur',
+  `login` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Identifiant de connexion (unique)',
+  `mot_de_passe` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Mot de passe hashé (password_hash)',
+  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Adresse email',
+  `telephone` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Numéro de téléphone',
   `niveau_acces` tinyint(1) NOT NULL DEFAULT '2' COMMENT '1=Admin, 2=Vendeur',
-  `photo` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Photo de profil',
+  `photo` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Photo de profil',
   `est_actif` tinyint(1) DEFAULT '1' COMMENT '0=Inactif, 1=Actif',
   `date_creation` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'Date de création du compte',
   `date_derniere_connexion` datetime DEFAULT NULL COMMENT 'Dernière connexion',
@@ -464,8 +539,13 @@ CREATE TABLE `utilisateurs` (
 
 --
 -- Déchargement des données de la table `utilisateurs`
--- (Vide - Utilisateur admin créé lors du setup initial)
 --
+
+INSERT INTO `utilisateurs` (`id_utilisateur`, `nom_complet`, `login`, `mot_de_passe`, `email`, `telephone`, `niveau_acces`, `photo`, `est_actif`, `date_creation`, `date_derniere_connexion`, `date_modification`) VALUES
+(3, 'EMMANUEL BARAKA', 'admin', '$2y$10$qcv4m7Sf5FsYTzk5sfFfe.TtdxPMvI3d5o1e4iv44HI0i/5JbYASy', 'admin@exemple.com', NULL, 1, NULL, 1, '2026-01-09 09:42:27', '2026-01-23 13:50:53', '2026-01-23 11:50:53'),
+(4, 'FEFE3', 'fefe', '$2y$10$Z1/QXucaQs2ToNgZJy1Qo.4/7sm5U0DFk6XnhZmEid8CHIiRsxy9O', '', NULL, 2, NULL, 1, '2026-01-10 19:50:24', '2026-01-11 20:37:29', '2026-01-11 18:37:29'),
+(5, 'test4', 'test', '$2y$10$JQNoUt1ARFR3O7Vqm0Rgm.B6l/clQPbz2pQj3DYXthGql9EJ9SM6.', '', NULL, 2, NULL, 1, '2026-01-10 20:05:09', NULL, '2026-01-10 20:09:04'),
+(6, 'FEFE3', 'fefe4', '$2y$10$A9b/JCv5khrvwEf4Jb8XcOm6twS2e2fa618q3lPNsmu3hxiQXlBZa', 'coordination@fosip-drc.org', NULL, 2, NULL, 1, '2026-01-10 21:10:34', NULL, '2026-01-10 20:20:48');
 
 -- --------------------------------------------------------
 
@@ -475,7 +555,7 @@ CREATE TABLE `utilisateurs` (
 
 CREATE TABLE `ventes` (
   `id_vente` int NOT NULL,
-  `numero_facture` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Numéro unique de la facture',
+  `numero_facture` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Numéro unique de la facture',
   `id_client` int DEFAULT NULL COMMENT 'Client (NULL = vente comptoir)',
   `id_vendeur` int NOT NULL COMMENT 'Vendeur/Caissier qui a effectué la vente',
   `montant_total` decimal(15,2) NOT NULL DEFAULT '0.00' COMMENT 'Montant total de la vente',
@@ -484,17 +564,20 @@ CREATE TABLE `ventes` (
   `montant_tva` decimal(15,2) DEFAULT '0.00' COMMENT 'Montant TVA',
   `montant_paye` decimal(15,2) NOT NULL DEFAULT '0.00' COMMENT 'Montant payé par le client',
   `montant_rendu` decimal(15,2) DEFAULT '0.00' COMMENT 'Monnaie rendue',
-  `mode_paiement` enum('especes','carte','mobile_money','cheque','credit') COLLATE utf8mb4_unicode_ci DEFAULT 'especes',
-  `statut` enum('en_cours','validee','annulee') COLLATE utf8mb4_unicode_ci DEFAULT 'validee',
-  `notes` text COLLATE utf8mb4_unicode_ci COMMENT 'Notes ou observations',
+  `mode_paiement` enum('especes','carte','mobile_money','cheque','credit') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'especes',
+  `statut` enum('en_cours','validee','annulee') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'validee',
+  `notes` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'Notes ou observations',
   `date_vente` datetime DEFAULT CURRENT_TIMESTAMP COMMENT 'Date et heure de la vente',
   `date_modification` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='En-têtes des ventes (factures)';
 
 --
 -- Déchargement des données de la table `ventes`
--- (Vide - Aucune vente initiale)
 --
+
+INSERT INTO `ventes` (`id_vente`, `numero_facture`, `id_client`, `id_vendeur`, `montant_total`, `montant_ht`, `montant_remise`, `montant_tva`, `montant_paye`, `montant_rendu`, `mode_paiement`, `statut`, `notes`, `date_vente`, `date_modification`) VALUES
+(11, 'FAC-20260110-0001', NULL, 3, 1200.00, 1034.48, 0.00, 165.52, 0.00, 0.00, 'especes', 'validee', '', '2026-01-10 13:18:06', '2026-01-10 11:18:06'),
+(12, 'FAC-20260111-0002', NULL, 4, 1200.00, 1034.48, 0.00, 165.52, 0.00, 0.00, 'especes', 'validee', '', '2026-01-11 20:58:32', '2026-01-11 18:58:32');
 
 --
 -- Déclencheurs `ventes`
@@ -518,7 +601,8 @@ CREATE TABLE `ventes_details` (
   `id_detail` int NOT NULL,
   `id_vente` int NOT NULL COMMENT 'Référence à la vente',
   `id_produit` int NOT NULL COMMENT 'Produit vendu',
-  `nom_produit` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nom du produit (copie pour historique)',
+  `id_lot` int DEFAULT NULL,
+  `nom_produit` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nom du produit (copie pour historique)',
   `quantite` int NOT NULL DEFAULT '1' COMMENT 'Quantité vendue',
   `prix_unitaire` decimal(15,2) NOT NULL COMMENT 'Prix unitaire de vente',
   `prix_achat_unitaire` decimal(15,2) NOT NULL COMMENT 'Prix d''achat (pour calcul bénéfice)',
@@ -611,6 +695,22 @@ CREATE TABLE `vue_mouvements_stock_detail` (
 -- --------------------------------------------------------
 
 --
+-- Doublure de structure pour la vue `vue_peremptions`
+-- (Voir ci-dessous la vue réelle)
+--
+CREATE TABLE `vue_peremptions` (
+`conditionnement` varchar(100)
+,`date_peremption` date
+,`dosage` varchar(100)
+,`fabriquant` varchar(255)
+,`id_produit` int
+,`nom_produit` varchar(255)
+,`statut_peremption` varchar(12)
+);
+
+-- --------------------------------------------------------
+
+--
 -- Doublure de structure pour la vue `vue_produits_alertes`
 -- (Voir ci-dessous la vue réelle)
 --
@@ -669,7 +769,7 @@ CREATE TABLE `vue_stock_global` (
 --
 DROP TABLE IF EXISTS `vue_inventaire_complet`;
 
-CREATE ALGORITHM=UNDEFINED SQL SECURITY INVOKER VIEW `vue_inventaire_complet`  AS SELECT `p`.`id_produit` AS `id_produit`, `p`.`code_produit` AS `code_produit`, `p`.`nom_produit` AS `nom_produit`, `c`.`nom_categorie` AS `nom_categorie`, `d`.`id_depot` AS `id_depot`, `d`.`nom_depot` AS `nom_depot`, `d`.`type_depot` AS `type_depot`, `spd`.`quantite` AS `quantite`, `p`.`prix_achat` AS `prix_achat`, `p`.`prix_vente` AS `prix_vente`, (`spd`.`quantite` * `p`.`prix_achat`) AS `valeur_stock_achat`, (`spd`.`quantite` * `p`.`prix_vente`) AS `valeur_stock_vente`, `p`.`unite_mesure` AS `unite_mesure`, `spd`.`seuil_alerte` AS `seuil_alerte`, (case when (`spd`.`quantite` = 0) then 'rupture' when (`spd`.`quantite` <= `spd`.`seuil_alerte`) then 'alerte' else 'normal' end) AS `statut_depot` FROM (((`produits` `p` join `stock_par_depot` `spd` on((`p`.`id_produit` = `spd`.`id_produit`))) join `depots` `d` on((`spd`.`id_depot` = `d`.`id_depot`))) left join `categories` `c` on((`p`.`id_categorie` = `c`.`id_categorie`))) WHERE ((`p`.`est_actif` = 1) AND (`d`.`est_actif` = 1)) ORDER BY `p`.`nom_produit` ASC, `d`.`ordre_affichage` ASC, `d`.`nom_depot` ASC ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vue_inventaire_complet`  AS SELECT `p`.`id_produit` AS `id_produit`, `p`.`code_produit` AS `code_produit`, `p`.`nom_produit` AS `nom_produit`, `c`.`nom_categorie` AS `nom_categorie`, `d`.`id_depot` AS `id_depot`, `d`.`nom_depot` AS `nom_depot`, `d`.`type_depot` AS `type_depot`, `spd`.`quantite` AS `quantite`, `p`.`prix_achat` AS `prix_achat`, `p`.`prix_vente` AS `prix_vente`, (`spd`.`quantite` * `p`.`prix_achat`) AS `valeur_stock_achat`, (`spd`.`quantite` * `p`.`prix_vente`) AS `valeur_stock_vente`, `p`.`unite_mesure` AS `unite_mesure`, `spd`.`seuil_alerte` AS `seuil_alerte`, (case when (`spd`.`quantite` = 0) then 'rupture' when (`spd`.`quantite` <= `spd`.`seuil_alerte`) then 'alerte' else 'normal' end) AS `statut_depot` FROM (((`produits` `p` join `stock_par_depot` `spd` on((`p`.`id_produit` = `spd`.`id_produit`))) join `depots` `d` on((`spd`.`id_depot` = `d`.`id_depot`))) left join `categories` `c` on((`p`.`id_categorie` = `c`.`id_categorie`))) WHERE ((`p`.`est_actif` = 1) AND (`d`.`est_actif` = 1)) ORDER BY `p`.`nom_produit` ASC, `d`.`ordre_affichage` ASC, `d`.`nom_depot` ASC ;
 
 -- --------------------------------------------------------
 
@@ -678,7 +778,16 @@ CREATE ALGORITHM=UNDEFINED SQL SECURITY INVOKER VIEW `vue_inventaire_complet`  A
 --
 DROP TABLE IF EXISTS `vue_mouvements_stock_detail`;
 
-CREATE ALGORITHM=UNDEFINED SQL SECURITY INVOKER VIEW `vue_mouvements_stock_detail`  AS SELECT `m`.`id_mouvement` AS `id_mouvement`, `m`.`type_mouvement` AS `type_mouvement`, `m`.`date_mouvement` AS `date_mouvement`, `p`.`id_produit` AS `id_produit`, `p`.`code_produit` AS `code_produit`, `p`.`nom_produit` AS `nom_produit`, `p`.`unite_mesure` AS `unite_mesure`, `m`.`quantite` AS `quantite`, `m`.`quantite_avant` AS `quantite_avant`, `m`.`quantite_apres` AS `quantite_apres`, `ds`.`nom_depot` AS `depot_source`, `dd`.`nom_depot` AS `depot_destination`, `f`.`nom_fournisseur` AS `nom_fournisseur`, `m`.`cout_unitaire` AS `cout_unitaire`, `m`.`cout_total` AS `cout_total`, `m`.`motif` AS `motif`, `m`.`notes` AS `notes`, `u`.`nom_complet` AS `utilisateur`, `v`.`numero_facture` AS `numero_facture`, (case `m`.`type_mouvement` when 'entree' then 'Entrée stock' when 'sortie' then 'Sortie (Vente)' when 'transfert' then 'Transfert' when 'ajustement' then 'Ajustement' when 'inventaire' then 'Inventaire' when 'perte' then 'Perte/Casse' when 'retour' then 'Retour' else 'Autre' end) AS `type_mouvement_libelle` FROM ((((((`mouvements_stock` `m` join `produits` `p` on((`m`.`id_produit` = `p`.`id_produit`))) left join `depots` `ds` on((`m`.`id_depot_source` = `ds`.`id_depot`))) left join `depots` `dd` on((`m`.`id_depot_destination` = `dd`.`id_depot`))) left join `fournisseurs` `f` on((`m`.`id_fournisseur` = `f`.`id_fournisseur`))) left join `utilisateurs` `u` on((`m`.`id_utilisateur` = `u`.`id_utilisateur`))) left join `ventes` `v` on((`m`.`id_vente` = `v`.`id_vente`))) ORDER BY `m`.`date_mouvement` DESC, `m`.`id_mouvement` DESC ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vue_mouvements_stock_detail`  AS SELECT `m`.`id_mouvement` AS `id_mouvement`, `m`.`type_mouvement` AS `type_mouvement`, `m`.`date_mouvement` AS `date_mouvement`, `p`.`id_produit` AS `id_produit`, `p`.`code_produit` AS `code_produit`, `p`.`nom_produit` AS `nom_produit`, `p`.`unite_mesure` AS `unite_mesure`, `m`.`quantite` AS `quantite`, `m`.`quantite_avant` AS `quantite_avant`, `m`.`quantite_apres` AS `quantite_apres`, `ds`.`nom_depot` AS `depot_source`, `dd`.`nom_depot` AS `depot_destination`, `f`.`nom_fournisseur` AS `nom_fournisseur`, `m`.`cout_unitaire` AS `cout_unitaire`, `m`.`cout_total` AS `cout_total`, `m`.`motif` AS `motif`, `m`.`notes` AS `notes`, `u`.`nom_complet` AS `utilisateur`, `v`.`numero_facture` AS `numero_facture`, (case `m`.`type_mouvement` when 'entree' then 'Entrée stock' when 'sortie' then 'Sortie (Vente)' when 'transfert' then 'Transfert' when 'ajustement' then 'Ajustement' when 'inventaire' then 'Inventaire' when 'perte' then 'Perte/Casse' when 'retour' then 'Retour' else 'Autre' end) AS `type_mouvement_libelle` FROM ((((((`mouvements_stock` `m` join `produits` `p` on((`m`.`id_produit` = `p`.`id_produit`))) left join `depots` `ds` on((`m`.`id_depot_source` = `ds`.`id_depot`))) left join `depots` `dd` on((`m`.`id_depot_destination` = `dd`.`id_depot`))) left join `fournisseurs` `f` on((`m`.`id_fournisseur` = `f`.`id_fournisseur`))) left join `utilisateurs` `u` on((`m`.`id_utilisateur` = `u`.`id_utilisateur`))) left join `ventes` `v` on((`m`.`id_vente` = `v`.`id_vente`))) ORDER BY `m`.`date_mouvement` DESC, `m`.`id_mouvement` DESC ;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la vue `vue_peremptions`
+--
+DROP TABLE IF EXISTS `vue_peremptions`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vue_peremptions`  AS SELECT `p`.`id_produit` AS `id_produit`, `p`.`nom_produit` AS `nom_produit`, `p`.`dosage` AS `dosage`, `p`.`conditionnement` AS `conditionnement`, `p`.`date_peremption` AS `date_peremption`, `p`.`fabriquant` AS `fabriquant`, (case when (`p`.`date_peremption` is null) then 'inconnu' when (`p`.`date_peremption` < curdate()) then 'expiré' when (`p`.`date_peremption` < (curdate() + interval 30 day)) then 'alerte_grave' when (`p`.`date_peremption` < (curdate() + interval 90 day)) then 'alerte' else 'ok' end) AS `statut_peremption` FROM `produits` AS `p` WHERE (`p`.`date_peremption` is not null) ;
 
 -- --------------------------------------------------------
 
@@ -687,7 +796,7 @@ CREATE ALGORITHM=UNDEFINED SQL SECURITY INVOKER VIEW `vue_mouvements_stock_detai
 --
 DROP TABLE IF EXISTS `vue_produits_alertes`;
 
-CREATE ALGORITHM=UNDEFINED SQL SECURITY INVOKER VIEW `vue_produits_alertes`  AS SELECT `p`.`id_produit` AS `id_produit`, `p`.`nom_produit` AS `nom_produit`, `p`.`code_produit` AS `code_produit`, `c`.`nom_categorie` AS `nom_categorie`, `p`.`quantite_stock` AS `quantite_stock`, `p`.`seuil_alerte` AS `seuil_alerte`, `p`.`seuil_critique` AS `seuil_critique`, (case when (`p`.`quantite_stock` = 0) then 'rupture' when (`p`.`quantite_stock` <= `p`.`seuil_critique`) then 'critique' when (`p`.`quantite_stock` <= `p`.`seuil_alerte`) then 'faible' else 'normal' end) AS `niveau_alerte`, `p`.`date_entree` AS `date_entree` FROM (`produits` `p` left join `categories` `c` on((`p`.`id_categorie` = `c`.`id_categorie`))) WHERE ((`p`.`est_actif` = 1) AND (`p`.`quantite_stock` <= `p`.`seuil_alerte`)) ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vue_produits_alertes`  AS SELECT `p`.`id_produit` AS `id_produit`, `p`.`nom_produit` AS `nom_produit`, `p`.`code_produit` AS `code_produit`, `c`.`nom_categorie` AS `nom_categorie`, `p`.`quantite_stock` AS `quantite_stock`, `p`.`seuil_alerte` AS `seuil_alerte`, `p`.`seuil_critique` AS `seuil_critique`, (case when (`p`.`quantite_stock` = 0) then 'rupture' when (`p`.`quantite_stock` <= `p`.`seuil_critique`) then 'critique' when (`p`.`quantite_stock` <= `p`.`seuil_alerte`) then 'faible' else 'normal' end) AS `niveau_alerte`, `p`.`date_entree` AS `date_entree` FROM (`produits` `p` left join `categories` `c` on((`p`.`id_categorie` = `c`.`id_categorie`))) WHERE ((`p`.`est_actif` = 1) AND (`p`.`quantite_stock` <= `p`.`seuil_alerte`)) ;
 
 -- --------------------------------------------------------
 
@@ -696,7 +805,7 @@ CREATE ALGORITHM=UNDEFINED SQL SECURITY INVOKER VIEW `vue_produits_alertes`  AS 
 --
 DROP TABLE IF EXISTS `vue_statistiques_ventes`;
 
-CREATE ALGORITHM=UNDEFINED SQL SECURITY INVOKER VIEW `vue_statistiques_ventes`  AS SELECT cast(`v`.`date_vente` as date) AS `date_vente`, count(`v`.`id_vente`) AS `nombre_ventes`, sum(`v`.`montant_total`) AS `chiffre_affaires`, sum(`vd`.`benefice_ligne`) AS `benefice_total`, `u`.`nom_complet` AS `vendeur` FROM ((`ventes` `v` left join `ventes_details` `vd` on((`v`.`id_vente` = `vd`.`id_vente`))) left join `utilisateurs` `u` on((`v`.`id_vendeur` = `u`.`id_utilisateur`))) WHERE (`v`.`statut` = 'validee') GROUP BY cast(`v`.`date_vente` as date), `u`.`id_utilisateur` ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vue_statistiques_ventes`  AS SELECT cast(`v`.`date_vente` as date) AS `date_vente`, count(`v`.`id_vente`) AS `nombre_ventes`, sum(`v`.`montant_total`) AS `chiffre_affaires`, sum(`vd`.`benefice_ligne`) AS `benefice_total`, `u`.`nom_complet` AS `vendeur` FROM ((`ventes` `v` left join `ventes_details` `vd` on((`v`.`id_vente` = `vd`.`id_vente`))) left join `utilisateurs` `u` on((`v`.`id_vendeur` = `u`.`id_utilisateur`))) WHERE (`v`.`statut` = 'validee') GROUP BY cast(`v`.`date_vente` as date), `u`.`id_utilisateur` ;
 
 -- --------------------------------------------------------
 
@@ -705,11 +814,17 @@ CREATE ALGORITHM=UNDEFINED SQL SECURITY INVOKER VIEW `vue_statistiques_ventes`  
 --
 DROP TABLE IF EXISTS `vue_stock_global`;
 
-CREATE ALGORITHM=UNDEFINED SQL SECURITY INVOKER VIEW `vue_stock_global`  AS SELECT `p`.`id_produit` AS `id_produit`, `p`.`code_produit` AS `code_produit`, `p`.`nom_produit` AS `nom_produit`, `p`.`id_categorie` AS `id_categorie`, `c`.`nom_categorie` AS `nom_categorie`, `p`.`prix_achat` AS `prix_achat`, `p`.`prix_vente` AS `prix_vente`, coalesce(sum(`spd`.`quantite`),0) AS `stock_total`, `p`.`seuil_alerte` AS `seuil_alerte`, `p`.`seuil_critique` AS `seuil_critique`, `p`.`unite_mesure` AS `unite_mesure`, `p`.`est_actif` AS `est_actif`, (case when (coalesce(sum(`spd`.`quantite`),0) = 0) then 'rupture' when (coalesce(sum(`spd`.`quantite`),0) <= `p`.`seuil_critique`) then 'critique' when (coalesce(sum(`spd`.`quantite`),0) <= `p`.`seuil_alerte`) then 'alerte' else 'normal' end) AS `statut_stock` FROM ((`produits` `p` left join `categories` `c` on((`p`.`id_categorie` = `c`.`id_categorie`))) left join `stock_par_depot` `spd` on((`p`.`id_produit` = `spd`.`id_produit`))) WHERE (`p`.`est_actif` = 1) GROUP BY `p`.`id_produit`, `p`.`code_produit`, `p`.`nom_produit`, `p`.`id_categorie`, `c`.`nom_categorie`, `p`.`prix_achat`, `p`.`prix_vente`, `p`.`seuil_alerte`, `p`.`seuil_critique`, `p`.`unite_mesure`, `p`.`est_actif` ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vue_stock_global`  AS SELECT `p`.`id_produit` AS `id_produit`, `p`.`code_produit` AS `code_produit`, `p`.`nom_produit` AS `nom_produit`, `p`.`id_categorie` AS `id_categorie`, `c`.`nom_categorie` AS `nom_categorie`, `p`.`prix_achat` AS `prix_achat`, `p`.`prix_vente` AS `prix_vente`, coalesce(sum(`spd`.`quantite`),0) AS `stock_total`, `p`.`seuil_alerte` AS `seuil_alerte`, `p`.`seuil_critique` AS `seuil_critique`, `p`.`unite_mesure` AS `unite_mesure`, `p`.`est_actif` AS `est_actif`, (case when (coalesce(sum(`spd`.`quantite`),0) = 0) then 'rupture' when (coalesce(sum(`spd`.`quantite`),0) <= `p`.`seuil_critique`) then 'critique' when (coalesce(sum(`spd`.`quantite`),0) <= `p`.`seuil_alerte`) then 'alerte' else 'normal' end) AS `statut_stock` FROM ((`produits` `p` left join `categories` `c` on((`p`.`id_categorie` = `c`.`id_categorie`))) left join `stock_par_depot` `spd` on((`p`.`id_produit` = `spd`.`id_produit`))) WHERE (`p`.`est_actif` = 1) GROUP BY `p`.`id_produit`, `p`.`code_produit`, `p`.`nom_produit`, `p`.`id_categorie`, `c`.`nom_categorie`, `p`.`prix_achat`, `p`.`prix_vente`, `p`.`seuil_alerte`, `p`.`seuil_critique`, `p`.`unite_mesure`, `p`.`est_actif` ;
 
 --
 -- Index pour les tables déchargées
 --
+
+--
+-- Index pour la table `caisses`
+--
+ALTER TABLE `caisses`
+  ADD PRIMARY KEY (`id_caisse`);
 
 --
 -- Index pour la table `categories`
@@ -730,6 +845,14 @@ ALTER TABLE `clients`
 --
 ALTER TABLE `configuration`
   ADD PRIMARY KEY (`id_config`);
+
+--
+-- Index pour la table `depenses`
+--
+ALTER TABLE `depenses`
+  ADD PRIMARY KEY (`id_depense`),
+  ADD KEY `utilisateur_id` (`utilisateur_id`),
+  ADD KEY `caisse_id` (`caisse_id`);
 
 --
 -- Index pour la table `depots`
@@ -764,6 +887,13 @@ ALTER TABLE `logs_activites`
   ADD KEY `idx_utilisateur` (`id_utilisateur`),
   ADD KEY `idx_type` (`type_action`),
   ADD KEY `idx_date` (`date_action`);
+
+--
+-- Index pour la table `lots_medicaments`
+--
+ALTER TABLE `lots_medicaments`
+  ADD PRIMARY KEY (`id_lot`),
+  ADD KEY `id_produit` (`id_produit`);
 
 --
 -- Index pour la table `mouvements`
@@ -855,6 +985,12 @@ ALTER TABLE `ventes_details`
 --
 
 --
+-- AUTO_INCREMENT pour la table `caisses`
+--
+ALTER TABLE `caisses`
+  MODIFY `id_caisse` int NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT pour la table `categories`
 --
 ALTER TABLE `categories`
@@ -873,10 +1009,16 @@ ALTER TABLE `configuration`
   MODIFY `id_config` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
+-- AUTO_INCREMENT pour la table `depenses`
+--
+ALTER TABLE `depenses`
+  MODIFY `id_depense` int NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT pour la table `depots`
 --
 ALTER TABLE `depots`
-  MODIFY `id_depot` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id_depot` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT pour la table `details_vente`
@@ -894,7 +1036,13 @@ ALTER TABLE `fournisseurs`
 -- AUTO_INCREMENT pour la table `logs_activites`
 --
 ALTER TABLE `logs_activites`
-  MODIFY `id_log` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+  MODIFY `id_log` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=63;
+
+--
+-- AUTO_INCREMENT pour la table `lots_medicaments`
+--
+ALTER TABLE `lots_medicaments`
+  MODIFY `id_lot` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pour la table `mouvements`
@@ -906,37 +1054,37 @@ ALTER TABLE `mouvements`
 -- AUTO_INCREMENT pour la table `mouvements_stock`
 --
 ALTER TABLE `mouvements_stock`
-  MODIFY `id_mouvement` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+  MODIFY `id_mouvement` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT pour la table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `id_notification` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+  MODIFY `id_notification` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT pour la table `produits`
 --
 ALTER TABLE `produits`
-  MODIFY `id_produit` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+  MODIFY `id_produit` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT pour la table `stock_par_depot`
 --
 ALTER TABLE `stock_par_depot`
-  MODIFY `id_stock` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+  MODIFY `id_stock` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT pour la table `utilisateurs`
 --
 ALTER TABLE `utilisateurs`
-  MODIFY `id_utilisateur` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+  MODIFY `id_utilisateur` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT pour la table `ventes`
 --
 ALTER TABLE `ventes`
-  MODIFY `id_vente` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+  MODIFY `id_vente` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT pour la table `ventes_details`
@@ -949,11 +1097,24 @@ ALTER TABLE `ventes_details`
 --
 
 --
+-- Contraintes pour la table `depenses`
+--
+ALTER TABLE `depenses`
+  ADD CONSTRAINT `depenses_ibfk_1` FOREIGN KEY (`utilisateur_id`) REFERENCES `utilisateurs` (`id_utilisateur`),
+  ADD CONSTRAINT `depenses_ibfk_2` FOREIGN KEY (`caisse_id`) REFERENCES `caisses` (`id_caisse`);
+
+--
 -- Contraintes pour la table `details_vente`
 --
 ALTER TABLE `details_vente`
   ADD CONSTRAINT `fk_detail_produit_new` FOREIGN KEY (`id_produit`) REFERENCES `produits` (`id_produit`),
   ADD CONSTRAINT `fk_detail_vente_new` FOREIGN KEY (`id_vente`) REFERENCES `ventes` (`id_vente`) ON DELETE CASCADE;
+
+--
+-- Contraintes pour la table `lots_medicaments`
+--
+ALTER TABLE `lots_medicaments`
+  ADD CONSTRAINT `lots_medicaments_ibfk_1` FOREIGN KEY (`id_produit`) REFERENCES `produits` (`id_produit`);
 
 --
 -- Contraintes pour la table `mouvements`

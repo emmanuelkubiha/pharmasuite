@@ -1,0 +1,19 @@
+Ce week-end, j’ai troqué un peu de mon temps libre pour relever un défi qui me tenait à cœur : concevoir un système de gestion complet pour les commerces de détail. À la base, c’était une demande d’un client, mais je me suis dit : pourquoi ne pas en faire profiter tous ceux qui galèrent encore avec des fichiers Excel ou des solutions inadaptées ?
+
+STORESuite, c’est le fruit de ce travail :
+- Gestion des produits, fournisseurs, stocks multi-dépôts
+- Suivi des ventes, facturation automatique avec TVA
+- Droits d’accès, sécurité, traçabilité
+- Tableaux de bord et alertes en temps réel
+
+Pensé pour les entrepreneurs, commerçants, supermarchés, grossistes…
+
+J’ai voulu une interface simple, moderne, 100% en français, qui colle à la réalité du terrain.
+
+La vidéo ci-dessous vous montre comment ça fonctionne, et si ça peut aider ne serait-ce qu’une personne à mieux gérer son business, alors le pari est gagné !
+
+En savoir plus : https://storesuite.shop
+
+Si vous avez besoin d’idées simples d’hébergeurs ou d’un espace pour lancer votre projet, n’hésitez pas à me contacter.
+
+#gestioncommerce #STORESuite 
