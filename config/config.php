@@ -34,7 +34,7 @@ define('DB_CHARSET', 'utf8mb4');             // Encodage des caractères
 define('ROOT_PATH', dirname(__DIR__));
 
 // URL de base du site (à adapter selon votre configuration)
-define('BASE_URL', 'http://localhost:8888/STORESuite/');
+define('BASE_URL', 'http://localhost:8888/PharmaSuite/');
 
 // Chemins vers les dossiers importants
 define('UPLOAD_PATH', ROOT_PATH . '/uploads/');

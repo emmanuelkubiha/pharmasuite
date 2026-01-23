@@ -261,17 +261,18 @@ if (is_logged_in()) {
                 <?php if (!empty($logo_boutique) && file_exists('uploads/logos/' . $logo_boutique)): ?>
                     <img src="<?php echo BASE_URL . 'uploads/logos/' . e($logo_boutique); ?>" alt="Logo">
                 <?php else: ?>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                        <path d="M6.331 8h11.339a2 2 0 0 1 1.977 2.304l-1.255 8.152a3 3 0 0 1 -2.966 2.544h-6.852a3 3 0 0 1 -2.965 -2.544l-1.255 -8.152a2 2 0 0 1 1.977 -2.304z" />
-                        <path d="M9 11v-5a3 3 0 0 1 6 0v5" />
+                    <!-- Icône croix verte pharmacie -->
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="80" height="80">
+                        <rect x="0" y="0" width="64" height="64" rx="16" fill="#22c55e"/>
+                        <rect x="28" y="14" width="8" height="36" rx="3" fill="#fff"/>
+                        <rect x="14" y="28" width="36" height="8" rx="3" fill="#fff"/>
                     </svg>
                 <?php endif; ?>
             </div>
             
             <!-- Nom du système -->
-            <div class="system-name"><?php echo strtoupper(e($nom_boutique)); ?></div>
-            <div class="system-subtitle">SYSTÈME DE GESTION</div>
+            <div class="system-name">PHARMASUITE</div>
+            <div class="system-subtitle">SYSTÈME DE GESTION PHARMACIE</div>
             
             <!-- Spinner -->
             <div class="loading-spinner">
