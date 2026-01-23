@@ -22,7 +22,7 @@
 // CONFIGURATION DE LA BASE DE DONNÉES
 // ============================================================================
 define('DB_HOST', 'localhost');              // Hôte de la base de données
-define('DB_NAME', 'storesuite');             // Nom de la base de données
+define('DB_NAME', 'pharmasuite');             // Nom de la base de données
 define('DB_USER', 'root');                   // Utilisateur MySQL
 define('DB_PASS', 'root');                   // Mot de passe MySQL (MAMP utilise 'root')
 define('DB_CHARSET', 'utf8mb4');             // Encodage des caractères

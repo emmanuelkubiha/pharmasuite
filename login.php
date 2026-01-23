@@ -374,7 +374,7 @@ $flash = get_flash_message();
             
             <!-- Nom du système -->
             <div class="system-name"><?php echo strtoupper(e($config['nom_boutique'])); ?></div>
-            <div class="system-subtitle">SYSTÈME DE GESTION</div>
+            <div class="system-subtitle">SYSTÈME DE GESTION PHARMACIE</div>
             
             <!-- Spinner -->
             <div class="loading-spinner">
@@ -419,7 +419,7 @@ $flash = get_flash_message();
             
             <form class="card card-md" method="POST" action="" autocomplete="off">
                 <div class="card-body">
-                    <h2 class="card-title text-center mb-4">Connexion à STORESUITE</h2>
+                    <h2 class="card-title text-center mb-4">Connexion à PHARMASUITE</h2>
                     
                     <?php if ($error_message): ?>
                         <div class="alert alert-danger alert-dismissible" role="alert">
@@ -485,7 +485,7 @@ $flash = get_flash_message();
             </div>
             
             <div class="text-center text-muted mt-3">
-                <small>STORESUITE v<?php echo APP_VERSION; ?> - Système de Gestion de Stock</small>
+                <small>PHARMASUITE v<?php echo APP_VERSION; ?> - Système de Gestion Pharmacie</small>
             </div>
         </div>
     </div>

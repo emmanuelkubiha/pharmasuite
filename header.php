@@ -19,6 +19,9 @@ mb_internal_encoding('UTF-8');
     <link href="<?php echo BASE_URL; ?>assets/css/tabler.min.css" rel="stylesheet"/>
     <link href="<?php echo BASE_URL; ?>assets/css/tabler-vendors.min.css" rel="stylesheet"/>
     
+    <!-- Material Symbols Outlined (pour icônes Google) -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap">
+
     <!-- Custom CSS -->
     <link href="<?php echo BASE_URL; ?>assets/css/loader.css" rel="stylesheet"/>
     <link href="<?php echo BASE_URL; ?>assets/css/style.css" rel="stylesheet"/>

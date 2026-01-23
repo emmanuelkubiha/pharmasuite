@@ -13,11 +13,11 @@ $user_id = null;
 $user_name = null;
 $user_niveau = 2;
 $is_admin = false;
-$nom_boutique = 'Store Suite';
+$nom_boutique = 'PharmaSuite';
 $logo_boutique = '';
 $devise = 'USD';
-$couleur_primaire = '#3b82f6';
-$couleur_secondaire = '#1e40af';
+$couleur_primaire = '#22c55e';
+$couleur_secondaire = '#22c55e';
 $page_title = 'Aide & À Propos';
 
 // Si connecté, charger les vraies variables comme partout ailleurs
@@ -70,9 +70,90 @@ if ($is_logged_in) {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title><?php echo e($page_title); ?> - Store Suite</title>
+        <title><?php echo e($page_title); ?> - PharmaSuite</title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap">
         <link rel="stylesheet" href="assets/css/style.css">
+        <style>
+        .tab-content>.tab-pane { display: none; }
+        .tab-content>.active { display: block; }
+        body {
+            background: #f6fff9;
+        }
+        .pharma-hero {
+            background: #fff;
+            color: <?php echo $couleur_primaire; ?>;
+            border-radius: 1.5rem;
+            box-shadow: 0 8px 32px rgba(34,197,94,0.10);
+            padding: 2.5rem 2rem 2rem 2rem;
+            margin-bottom: 2.5rem;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #e0f7ef;
+        }
+        .pharma-hero .pharma-icon {
+            position: absolute;
+            right: 2rem;
+            top: 2rem;
+            opacity: 0.10;
+            font-size: 8rem;
+            color: <?php echo $couleur_primaire; ?>;
+        }
+        .pharma-card {
+            border-radius: 1.2rem!important;
+            box-shadow: 0 4px 24px rgba(34,197,94,0.08);
+            border: 1px solid #e0f7ef;
+            background: #fff;
+            color: #222;
+        }
+        .pharma-badge {
+            background: <?php echo $couleur_primaire; ?>;
+            color: #fff;
+            font-size: 0.95em;
+            border-radius: 0.7em;
+            padding: 0.3em 0.9em;
+        }
+        .nav-tabs .nav-link.active {
+            background: <?php echo $couleur_primaire; ?>;
+            color: #fff !important;
+            border-radius: 1em 1em 0 0;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(34,197,94,0.10);
+        }
+        .nav-tabs .nav-link {
+            color: <?php echo $couleur_primaire; ?>;
+            font-weight: 500;
+            background: #fff;
+            margin-right: 0.2em;
+        }
+        .nav-tabs .nav-link:hover {
+            background: #e0f7ef;
+            color: <?php echo $couleur_secondaire; ?>;
+        }
+        .card-title {
+            color: <?php echo $couleur_primaire; ?> !important;
+            font-weight: 700;
+        }
+        .card-text, .card-body, .card {
+            color: #222 !important;
+        }
+        .text-muted, .small, .text-center small {
+            color: #6b7280 !important;
+        }
+        .pharma-card .badge, .pharma-card .pharma-badge {
+            background: <?php echo $couleur_primaire; ?>;
+            color: #fff;
+        }
+        .pharma-card .card-title, .pharma-card .card-text, .pharma-card .card-body {
+            color: #222 !important;
+        }
+        .pharma-footer {
+            background: #f6fff9;
+            border-top: 1px solid #e0f7ef;
+            color: #6b7280;
+            font-size: 0.95em;
+        }
+        </style>
     </head>
     <body>
         <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
@@ -85,7 +166,7 @@ if ($is_logged_in) {
                         <path d="M17 17h-11v-14h-2"/>
                         <path d="M6 5l14 1l-1 7h-13"/>
                     </svg>
-                    Store Suite
+                    PharmaSuite
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                     <span class="navbar-toggler-icon"></span>
@@ -106,14 +187,29 @@ if ($is_logged_in) {
 
 
 
-        <!-- Titre et introduction -->
-        <div class="page-header d-print-none mb-4">
-            <div class="row align-items-center">
-                <div class="col">
-                    <h2 class="page-title">Aide & À Propos - Store Suite</h2>
-                    <p class="text-muted mt-2">Système de gestion de commerce de détail complet et intuitif</p>
+        <!-- Hero Section moderne -->
+        <div class="pharma-hero mb-4">
+            <div style="position:relative;z-index:2;">
+                <div class="d-flex align-items-center mb-2">
+                    <!-- Croix pharmacie verte -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="none">
+                        <rect width="48" height="48" rx="12" fill="#22c55e"/>
+                        <rect x="21" y="8" width="6" height="32" rx="3" fill="#fff"/>
+                        <rect x="8" y="21" width="32" height="6" rx="3" fill="#fff"/>
+                    </svg>
+                    <h2 class="ms-3 mb-0" style="font-weight:900;letter-spacing:2px;color:<?php echo $couleur_primaire; ?>;">Aide & À Propos</h2>
                 </div>
+                <div class="fs-5 mb-1" style="font-weight:500;">PharmaSuite - Système de gestion de pharmacie moderne et intuitif</div>
+                <span class="pharma-badge">Version 2.0</span>
             </div>
+            <!-- Pilule stylisée à droite -->
+            <span class="pharma-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 64 64" fill="none">
+                    <ellipse cx="32" cy="32" rx="24" ry="12" fill="#22c55e" opacity="0.12"/>
+                    <rect x="20" y="16" width="24" height="32" rx="12" fill="#fff" stroke="#22c55e" stroke-width="4"/>
+                    <rect x="20" y="32" width="24" height="16" rx="8" fill="#22c55e" opacity="0.7"/>
+                </svg>
+            </span>
         </div>
 
         <!-- Navigation par sections -->
@@ -121,44 +217,46 @@ if ($is_logged_in) {
             <div class="col-12">
                 <div class="nav nav-tabs border-0 flex-wrap" role="tablist">
                     <button class="nav-link active" id="tab-overview" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
-                        Vue d'ensemble
+                        <span class="material-symbols-outlined align-middle me-1">dashboard</span> Vue d'ensemble
                     </button>
                     <button class="nav-link" id="tab-features" data-bs-toggle="tab" data-bs-target="#features" type="button" role="tab">
-                        Fonctionnalités
+                        <span class="material-symbols-outlined align-middle me-1">check_circle</span> Fonctionnalités
                     </button>
                     <button class="nav-link" id="tab-sections" data-bs-toggle="tab" data-bs-target="#sections" type="button" role="tab">
-                        Sections
+                        <span class="material-symbols-outlined align-middle me-1">view_list</span> Sections
                     </button>
                     <button class="nav-link" id="tab-howto" data-bs-toggle="tab" data-bs-target="#howto" type="button" role="tab">
-                        Guides
+                        <span class="material-symbols-outlined align-middle me-1">menu_book</span> Guides
                     </button>
                     <button class="nav-link" id="tab-about" data-bs-toggle="tab" data-bs-target="#about" type="button" role="tab">
-                        À Propos
+                        <span class="material-symbols-outlined align-middle me-1">info</span> À Propos
                     </button>
                 </div>
             </div>
         </div>
 
         <!-- Contenu des onglets -->
-        <div class="tab-content">
+        <div class="tab-content" id="pharmaTabContent">
 
             <!-- Vue d'ensemble -->
-            <div class="tab-pane fade show active" id="overview">
+            <div class="tab-pane fade show active" id="overview" role="tabpanel">
                 <!-- Hero Section -->
-                <div class="card border-0 shadow-lg mb-4" style="background: linear-gradient(135deg, <?php echo $couleur_primaire; ?> 0%, <?php echo $couleur_secondaire; ?> 100%); color: white;">
+                <div class="card pharma-card border-0 shadow-lg mb-4">
                     <div class="card-body p-5">
                         <div class="row align-items-center">
                             <div class="col-md-8">
-                                <h2 class="card-title mb-3" style="font-size: 2rem; font-weight: 700;">Store Suite</h2>
-                                <p class="card-text lead mb-0" style="font-size: 1.1rem; line-height: 1.6;">Votre solution complète de gestion de commerce de détail. Gérez ventes, stocks, clients et finances en un seul endroit, facilement et efficacement.</p>
+                                <div class="d-flex align-items-center mb-2">
+                                    <h2 class="card-title mb-0" style="font-size:2.2rem;font-weight:900;color:#22c55e !important;letter-spacing:1px;text-shadow:0 2px 8px #22c55e22;line-height:1.1;">PharmaSuite</h2>
+                                    <span class="badge ms-3" style="background:#22c55e !important;color:#fff !important;font-size:1.05rem;font-weight:800;border-radius:8px;padding:7px 18px;box-shadow:0 2px 8px #22c55e33;letter-spacing:0.5px;">v2.0</span>
+                                </div>
+                                <div class="mb-1" style="font-size:1.18rem;font-weight:700;color:#22c55e !important;letter-spacing:0.5px;text-shadow:0 1px 4px #22c55e22;">Système de gestion de pharmacie moderne et intuitif</div>
                             </div>
                             <div class="col-md-4 text-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="80" height="80" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.9;">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                    <circle cx="6" cy="19" r="2"/>
-                                    <circle cx="17" cy="19" r="2"/>
-                                    <path d="M17 17h-11v-14h-2"/>
-                                    <path d="M6 5l14 1l-1 7h-13"/>
+                                <!-- Logo croix pharmacie stylisée, vert forcé -->
+                                <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 64 64" fill="none">
+                                    <rect x="0" y="0" width="64" height="64" rx="16" fill="#22c55e"/>
+                                    <rect x="28" y="14" width="8" height="36" rx="3" fill="#fff"/>
+                                    <rect x="14" y="28" width="36" height="8" rx="3" fill="#fff"/>
                                 </svg>
                             </div>
                         </div>
@@ -168,7 +266,7 @@ if ($is_logged_in) {
                 <!-- Trois Piliers -->
                 <div class="row mb-4">
                     <div class="col-md-4 mb-3">
-                        <div class="card border-0 shadow-sm h-100 hover-shadow" style="transition: all 0.3s ease; border-left: 4px solid <?php echo $couleur_primaire; ?>;">
+                        <div class="card pharma-card border-0 shadow-sm h-100 hover-shadow" style="transition: all 0.3s ease; border-left: 4px solid #22c55e;">
                             <div class="card-body">
                                 <div class="text-center mb-3">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="40" height="40" viewBox="0 0 24 24" stroke-width="2" stroke="<?php echo $couleur_primaire; ?>" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -179,8 +277,27 @@ if ($is_logged_in) {
                                         <path d="M6 5l14 1l-1 7h-13"/>
                                     </svg>
                                 </div>
-                                <h5 class="card-title text-center" style="color: <?php echo $couleur_primaire; ?>;">Gestion des Ventes</h5>
-                                <p class="text-muted text-center small">Créez, validez et suivez vos ventes avec génération automatique de factures et calcul TVA intégré.</p>
+                                <h5 class="card-title text-center" style="color:<?php echo $couleur_primaire; ?> !important;">Gestion des Ventes</h5>
+                                <p class="text-center small" >Créez, validez et suivez vos ventes avec génération automatique de factures et calcul TVA intégré.</p>
+                                    <script>
+                                    // Correction Bootstrap tab JS si non chargé
+                                    document.addEventListener('DOMContentLoaded', function() {
+                                        const triggerTabList = [].slice.call(document.querySelectorAll('.nav-tabs .nav-link'));
+                                        triggerTabList.forEach(function(triggerEl) {
+                                            triggerEl.addEventListener('click', function (e) {
+                                                e.preventDefault();
+                                                triggerTabList.forEach(btn => btn.classList.remove('active'));
+                                                this.classList.add('active');
+                                                document.querySelectorAll('.tab-content>.tab-pane').forEach(pane => pane.classList.remove('show','active'));
+                                                const target = this.getAttribute('data-bs-target');
+                                                if(target) {
+                                                    const pane = document.querySelector(target);
+                                                    if(pane) pane.classList.add('show','active');
+                                                }
+                                            });
+                                        });
+                                    });
+                                    </script>
                             </div>
                         </div>
                     </div>
@@ -196,8 +313,8 @@ if ($is_logged_in) {
                                         <line x1="9" y1="18" x2="15" y2="18"/>
                                     </svg>
                                 </div>
-                                <h5 class="card-title text-center" style="color: <?php echo $couleur_primaire; ?>;">Gestion de Stock</h5>
-                                <p class="text-muted text-center small">Suivi en temps réel des stocks avec alertes intelligentes pour les produits en quantité faible ou critique.</p>
+                                <h5 class="card-title text-center" style="color:<?php echo $couleur_primaire; ?>;">Gestion de Stock Médicaments</h5>
+                                <p class="text-muted text-center small">Suivi en temps réel des stocks de médicaments avec alertes intelligentes pour les produits en quantité faible ou critique.</p>
                             </div>
                         </div>
                     </div>
@@ -212,7 +329,7 @@ if ($is_logged_in) {
                                         <rect x="15" y="4" width="6" height="16" rx="1"/>
                                     </svg>
                                 </div>
-                                <h5 class="card-title text-center" style="color: <?php echo $couleur_primaire; ?>;">Rapports &amp; Analyses</h5>
+                                <h5 class="card-title text-center" style="color:<?php echo $couleur_primaire; ?>;">Rapports &amp; Analyses</h5>
                                 <p class="text-muted text-center small">Tableaux de bord complets, graphiques détaillés et exports pour analyser vos performances.</p>
                             </div>
                         </div>
@@ -245,21 +362,21 @@ if ($is_logged_in) {
                     <div class="col-md-6">
                         <div class="card border-0 shadow-sm">
                             <div class="card-body">
-                                <h5 class="card-title mb-3" style="color: <?php echo $couleur_primaire; ?>;">
+                                <h5 class="card-title mb-3" style="color:<?php echo $couleur_primaire; ?>;">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
                                         <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/>
                                         <polyline points="12 7 12 12 16 14"/>
                                     </svg>
-                                    Pourquoi Store Suite ?
+                                    Pourquoi PharmaSuite ?
                                 </h5>
                                 <ul class="list-unstyled">
-                                    <li class="mb-2">⚡ Rapide et réactif, conçu pour les petits commerces</li>
-                                    <li class="mb-2">📊 Analytiques en temps réel pour meilleures décisions</li>
-                                    <li class="mb-2">🔒 Sécurisé avec gestion des droits d'accès</li>
-                                    <li class="mb-2">💾 Sauvegarde et récupération fiables</li>
-                                    <li class="mb-2">🎨 Design moderne et agréable à utiliser</li>
-                                    <li class="mb-2">🌍 Localisé entièrement en français</li>
+                                    <li class="mb-2">✓  Rapide et réactif, conçu pour les petits commerces</li>
+                                    <li class="mb-2">✓  Analytiques en temps réel pour meilleures décisions</li>
+                                    <li class="mb-2">✓  Sécurisé avec gestion des droits d'accès</li>
+                                    <li class="mb-2">✓  Sauvegarde et récupération fiables</li>
+                                    <li class="mb-2">✓  Design moderne et agréable à utiliser</li>
+                                    <li class="mb-2">✓  Localisé entièrement en français</li>
                                 </ul>
                             </div>
                         </div>
@@ -384,9 +501,9 @@ if ($is_logged_in) {
                     <div class="col-12">
                         <div class="card border-0 shadow-sm">
                             <div class="card-body">
-                                <h3 class="card-title mb-4">Navigation et Sections</h3>
+                                <h3 class="card-title mb-4" style="color:<?php echo $couleur_primaire; ?>;">Navigation et Sections</h3>
                                 
-                                <p class="text-muted mb-4">Voici les différentes sections de Store Suite et leur niveau d'accès.</p>
+                                <p class="text-muted mb-4">Voici les différentes sections de PharmaSuite et leur niveau d'accès.</p>
 
                                 <div class="table-responsive">
                                     <table class="table table-hover">
@@ -477,7 +594,7 @@ if ($is_logged_in) {
                     <div class="col-12">
                         <div class="card border-0 shadow-sm">
                             <div class="card-body">
-                                <h3 class="card-title mb-4">Guides Pratiques</h3>
+                                <h3 class="card-title mb-4" style="color:<?php echo $couleur_primaire; ?>;">Guides Pratiques</h3>
                                 
                                 <div class="accordion" id="accordionGuides">
                                     
@@ -676,7 +793,7 @@ if ($is_logged_in) {
                     <div class="col-lg-8 mb-4">
                         <div class="card border-0 shadow-sm">
                             <div class="card-body">
-                                <h3 class="card-title mb-4" style="color: <?php echo $couleur_primaire; ?>;">
+                                <h3 class="card-title mb-4" style="color:<?php echo $couleur_primaire; ?>;">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
                                         <circle cx="6" cy="19" r="2"/>
@@ -684,20 +801,20 @@ if ($is_logged_in) {
                                         <path d="M17 17h-11v-14h-2"/>
                                         <path d="M6 5l14 1l-1 7h-13"/>
                                     </svg>
-                                    À Propos de Store Suite
+                                    À Propos de PharmaSuite
                                 </h3>
                                 
                                 <div class="row">
                                     <div class="col-md-6 mb-4">
-                                        <h5 style="color: <?php echo $couleur_primaire; ?>;">Informations Produit</h5>
+                                        <h5 style="color:<?php echo $couleur_primaire; ?>;">Informations Produit</h5>
                                         <div class="list-group list-group-flush">
                                             <div class="list-group-item border-0 px-0 py-2">
                                                 <small class="text-muted">Nom</small>
-                                                <div><strong>Store Suite</strong></div>
+                                                <div><strong>PharmaSuite</strong></div>
                                             </div>
                                             <div class="list-group-item border-0 px-0 py-2">
                                                 <small class="text-muted">Type</small>
-                                                <div><strong>Système de Gestion de Boutique</strong></div>
+                                                <div><strong>Système de Gestion de Pharmacie</strong></div>
                                             </div>
                                             <div class="list-group-item border-0 px-0 py-2">
                                                 <small class="text-muted">Langue</small>
@@ -715,7 +832,7 @@ if ($is_logged_in) {
                                     </div>
 
                                     <div class="col-md-6 mb-4">
-                                        <h5 style="color: <?php echo $couleur_primaire; ?>;">Caractéristiques</h5>
+                                        <h5 style="color:<?php echo $couleur_primaire; ?>;">Caractéristiques</h5>
                                         <div class="list-group list-group-flush">
                                             <div class="list-group-item border-0 px-0 py-2 d-flex align-items-center">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2 text-success" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><polyline points="9 12 11 14 15 10" /></svg>
@@ -763,23 +880,18 @@ if ($is_logged_in) {
                     <!-- Développeur / À Propos -->
                     <div class="col-lg-4 mb-4">
                         <!-- Card Développeur -->
-                        <div class="card border-0 shadow-lg" style="background: linear-gradient(135deg, <?php echo $couleur_primaire; ?> 0%, <?php echo $couleur_secondaire; ?> 100%); color: white;">
+                        <div class="card pharma-card border-0 shadow-lg" style="background:#fff; color:<?php echo $couleur_primaire; ?>;">
                             <div class="card-body text-center p-4">
                                 <div class="mb-3">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="64" height="64" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.9;">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                        <circle cx="12" cy="8" r="4"/>
-                                        <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/>
-                                    </svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 64 64" fill="none"><rect x="0" y="0" width="64" height="64" rx="16" fill="#22c55e"/><rect x="28" y="14" width="8" height="36" rx="3" fill="#fff"/><rect x="14" y="28" width="36" height="8" rx="3" fill="#fff"/></svg>
                                 </div>
-                                <h5 class="card-title mb-1">Créateur & Développeur</h5>
-                                <p class="mb-3" style="font-size: 0.95rem; opacity: 0.95;">Emmanuel Baraka</p>
-                                <div class="divider divider-light my-3"></div>
-                                <p class="small mb-3" style="opacity: 0.9;">Passionné par l'innovation et la création de solutions logicielles pour les petits commerces.</p>
-                                
+                                <h5 class="card-title mb-1" style="color:<?php echo $couleur_primaire; ?>;font-weight:700;">Créateur & Développeur</h5>
+                                <p class="mb-3" style="font-size: 1.05rem; color:#222;">Emmanuel Baraka</p>
+                                <div class="divider my-3" style="background:<?php echo $couleur_primaire; ?>;opacity:0.15;height:2px;"></div>
+                                <p class="small mb-3" style="color:#444;">Passionné par l'innovation et la création de solutions logicielles pour la santé et les pharmacies.</p>
                                 <div class="mt-4">
-                                    <a href="https://cd.linkedin.com/in/emmanuel-baraka" target="_blank" class="btn btn-light btn-sm w-100 mb-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <a href="https://cd.linkedin.com/in/emmanuel-baraka" target="_blank" class="btn btn-success btn-sm w-100 mb-2" style="background:#22c55e;color:#fff;font-weight:600;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="#fff" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                             <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
                                             <rect x="4" y="4" width="16" height="16" rx="2"/>
                                             <line x1="8" y1="9" x2="8" y2="15"/>
@@ -797,9 +909,9 @@ if ($is_logged_in) {
                         <!-- Copyright -->
                         <div class="card border-0 shadow-sm mt-3">
                             <div class="card-body">
-                                <h6 class="card-title" style="color: <?php echo $couleur_primaire; ?>;">Copyright & Licence</h6>
+                                <h6 class="card-title" style="color:<?php echo $couleur_primaire; ?>;">Copyright & Licence</h6>
                                 <p class="text-muted small mb-0">
-                                    <strong>Store Suite v2.0</strong><br>
+                                    <strong>PharmaSuite v2.0</strong><br>
                                     © 2024 - 2026<br>
                                     Tous droits réservés<br><br>
                                     <em>Conçu et développé avec passion pour faciliter la gestion de votre commerce.</em>
@@ -835,7 +947,7 @@ if ($is_logged_in) {
                     <div class="col-md-4 text-center mb-3 mb-md-0">
                         <div class="text-muted small">
                             © <script>document.write(new Date().getFullYear());</script>
-                            <a href="javascript:void(0)" class="link-secondary fw-semibold text-decoration-none">Store Suite</a>
+                            <a href="javascript:void(0)" class="link-secondary fw-semibold text-decoration-none">PharmaSuite</a>
                         </div>
                         <div class="text-muted small mt-1">
                             <a href="aide.php" class="link-secondary text-decoration-none">Aide & À Propos</a> | Tous droits réservés
