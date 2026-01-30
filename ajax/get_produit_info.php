@@ -23,11 +23,13 @@ try {
         WHERE p.id_produit = ?
         AND p.est_actif = 1
     ", [$id_produit]);
-    
     if (!$produit) {
         throw new Exception('Produit non trouvé');
     }
-    
+
+    // Récupérer le dernier lot (le plus récent en date de péremption)
+    $lot = db_fetch_one("SELECT numero_lot, date_peremption FROM lots_medicaments WHERE id_produit = ? ORDER BY date_peremption DESC LIMIT 1", [$id_produit]);
+
     // Récupérer le stock par dépôt
     $stock_par_depot = db_fetch_all("
         SELECT 
@@ -39,10 +41,10 @@ try {
         WHERE d.est_actif = 1
         ORDER BY d.est_principal DESC, d.nom_depot ASC
     ", [$id_produit]);
-    
+
     // Calculer le stock total
     $stock_total = array_sum(array_column($stock_par_depot, 'quantite'));
-    
+
     // Vérifier les seuils d'alerte
     $alerte = '';
     if ($stock_total <= $produit['seuil_critique']) {
@@ -50,7 +52,7 @@ try {
     } elseif ($stock_total <= $produit['seuil_alerte']) {
         $alerte = 'alerte';
     }
-    
+
     $response = [
         'success' => true,
         'data' => [
@@ -68,7 +70,12 @@ try {
             'fournisseur' => $produit['nom_fournisseur'] ?? '-',
             'unite_mesure' => $produit['unite_mesure'],
             'alerte_niveau' => $alerte,
-            'stock_par_depot' => $stock_par_depot
+            'stock_par_depot' => $stock_par_depot,
+            // Champs supplémentaires pour mouvements/ajustements
+            'date_peremption' => $lot['date_peremption'] ?? $produit['date_peremption'] ?? null,
+            'numero_lot' => $lot['numero_lot'] ?? $produit['numero_lot'] ?? null,
+            'dosage' => $produit['dosage'] ?? '',
+            'conditionnement' => $produit['conditionnement'] ?? ''
         ]
     ];
 } catch (Exception $e) {

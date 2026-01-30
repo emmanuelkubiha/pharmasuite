@@ -115,8 +115,12 @@ $devise = $config['devise'];
 // Compter les notifications non lues
 $notifications_count = get_notifications_count();
 
-// Compter les produits en alerte
+// Compter les produits en alerte stock
 $products_alert_count = get_products_alert_count();
+// Compter les lots proches de la péremption (moins de 90 jours)
+$peremptions_alert_count = db_count('vue_peremptions', 'date_peremption IS NOT NULL AND date_peremption <= DATE_ADD(CURDATE(), INTERVAL 90 DAY)');
+// Total alertes critiques (stock ou péremption)
+$total_alertes_count = $products_alert_count + $peremptions_alert_count;
 
 // ============================================================================
 // FONCTIONS UTILITAIRES POUR VÉRIFICATION DES PERMISSIONS

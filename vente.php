@@ -15,6 +15,16 @@ $produits = db_fetch_all("
     ORDER BY p.nom_produit ASC
 ");
 
+// Préparer les lots disponibles par produit (pour sélection lors de l’ajout au panier)
+$lots_by_produit = [];
+$lots = db_fetch_all("SELECT l.id_lot, l.id_produit, l.numero_lot, l.date_peremption, l.quantite
+    FROM lots_medicaments l
+    WHERE l.quantite > 0
+    ORDER BY l.id_produit, l.date_peremption ASC");
+foreach ($lots as $lot) {
+    $lots_by_produit[$lot['id_produit']][] = $lot;
+}
+
 // Récupération des clients
 $clients = db_fetch_all("
     SELECT * FROM clients 
@@ -26,46 +36,111 @@ include 'header.php';
 ?>
 
 <style>
+body {
+    background: #eaf6f6;
+}
 .product-card {
     cursor: pointer;
     transition: all 0.3s ease;
-    border: 2px solid transparent;
+    border: 2px solid #b2dfdb;
+    border-radius: 18px;
+    background: #f8fffc;
     height: 100%;
+    box-shadow: 0 2px 8px rgba(44, 62, 80, 0.07);
 }
 .product-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-    border-color: <?php echo $couleur_primaire; ?>;
+    transform: translateY(-4px) scale(1.03);
+    box-shadow: 0 8px 24px rgba(44, 62, 80, 0.13);
+    border-color: #26a69a;
+    background: #e0f7fa;
 }
 .product-card:active {
     transform: scale(0.98);
 }
 .cart-item {
     padding: 1rem;
-    border-bottom: 1px solid #e9ecef;
-    background: #f8f9fa;
+    border-bottom: 1px solid #e0f2f1;
+    background: #f1f8e9;
     margin-bottom: 0.5rem;
-    border-radius: 8px;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(44, 62, 80, 0.06);
 }
 .cart-total-box {
-    background: linear-gradient(135deg, <?php echo $couleur_primaire; ?>, <?php echo $couleur_secondaire; ?>);
-    color: white;
+    background: linear-gradient(135deg, #26a69a, #b2dfdb);
+    color: #fff;
     padding: 1.5rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(44, 62, 80, 0.10);
 }
 .price-input {
     width: 100px;
     font-weight: bold;
+    border-radius: 8px;
+    border: 1.5px solid #b2dfdb;
 }
 .qty-input {
     width: 70px;
     text-align: center;
     font-weight: bold;
+    border-radius: 8px;
+    border: 1.5px solid #b2dfdb;
 }
 .cart-section {
     position: sticky;
     top: 20px;
+}
+.badge-stock {
+    background: #e0f2f1;
+    color: #00897b;
+    border-radius: 12px;
+    font-size: 13px;
+    padding: 4px 10px;
+    font-weight: 500;
+}
+.badge-stock-low {
+    background: #fff3e0;
+    color: #e65100;
+    border-radius: 12px;
+    font-size: 13px;
+    padding: 4px 10px;
+    font-weight: 500;
+}
+.icon-pharma {
+    color: #26a69a;
+    margin-right: 4px;
+}
+.modal-header.bg-primary {
+    background: linear-gradient(90deg, #26a69a 60%, #b2dfdb 100%);
+    color: #fff !important;
+}
+.modal-title {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+.modal-content {
+    border-radius: 18px;
+    box-shadow: 0 8px 32px rgba(44, 62, 80, 0.13);
+}
+.btn-success {
+    background: linear-gradient(90deg, #43cea2 0%, #185a9d 100%);
+    border: none;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+.btn-success:hover {
+    background: linear-gradient(90deg, #185a9d 0%, #43cea2 100%);
+}
+.btn-outline-secondary, .btn-outline-primary {
+    border-radius: 8px;
+}
+.form-label {
+    color: #00897b;
+    font-weight: 500;
+}
+.input-group-text {
+    background: #e0f2f1;
+    color: #00897b;
+    font-weight: 600;
 }
 </style>
 
@@ -138,18 +213,21 @@ include 'header.php';
                                     </div>
                                     <?php endif; ?>
                                     
-                                    <h4 class="mb-1 fs-6 fw-bold"><?php echo e($produit['nom_produit']); ?></h4>
-                                    <div class="text-muted small mb-2"><?php echo e($produit['nom_categorie'] ?? 'Sans catégorie'); ?></div>
-                                    
+                                    <h4 class="mb-1 fs-6 fw-bold">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon-pharma" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>
+                                        <?php echo e($produit['nom_produit']); ?>
+                                    </h4>
+                                    <div class="text-muted small mb-2">
+                                        <?php echo e($produit['nom_categorie'] ?? 'Sans catégorie'); ?>
+                                    </div>
                                     <?php if (!empty($produit['code_barre'])): ?>
                                     <div class="small mb-2">
-                                        <span class="badge bg-light text-dark">📦 <?php echo e($produit['code_barre']); ?></span>
+                                        <span class="badge bg-light text-dark">Code: <?php echo e($produit['code_barre']); ?></span>
                                     </div>
                                     <?php endif; ?>
-                                    
                                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-1">
                                         <strong class="text-primary fs-6"><?php echo format_montant($produit['prix_vente'], $devise); ?></strong>
-                                        <span class="badge <?php echo $produit['quantite_stock'] <= 10 ? 'bg-warning' : 'bg-success'; ?>">
+                                        <span class="<?php echo $produit['quantite_stock'] <= 10 ? 'badge-stock-low' : 'badge-stock'; ?>">
                                             Stock: <?php echo $produit['quantite_stock']; ?>
                                         </span>
                                     </div>
@@ -242,31 +320,33 @@ include 'header.php';
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
+                <div class="mb-2">
+                    <span class="badge bg-info text-dark mb-1" id="modalProductInfo"></span>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Lot</label>
+                    <select class="form-select" id="modalLotSelect"></select>
+                </div>
                 <div class="mb-3">
                     <label class="form-label">Prix unitaire</label>
                     <div class="input-group">
-                        <input type="number" class="form-control form-control-lg fw-bold" id="modalPrice" 
-                               min="0" step="0.01" value="0">
+                        <input type="number" class="form-control form-control-lg fw-bold" id="modalPrice" min="0" step="0.01" value="0">
                         <span class="input-group-text"><?php echo $devise; ?></span>
                     </div>
                 </div>
-                
                 <div class="mb-3">
                     <label class="form-label">Quantité</label>
                     <div class="input-group">
                         <button type="button" class="btn btn-outline-secondary" id="btnDecreaseQty">−</button>
-                        <input type="number" class="form-control form-control-lg text-center fw-bold" id="modalQuantity" 
-                               min="1" value="1">
+                        <input type="number" class="form-control form-control-lg text-center fw-bold" id="modalQuantity" min="1" value="1">
                         <button type="button" class="btn btn-outline-secondary" id="btnIncreaseQty">+</button>
                     </div>
                     <small class="text-muted" id="modalStockInfo">Stock disponible: 0</small>
                 </div>
-                
                 <div class="mb-3">
                     <label class="form-label">Sous-total</label>
                     <div class="input-group">
-                        <input type="text" class="form-control form-control-lg fw-bold text-success" 
-                               id="modalSubtotal" readonly value="0">
+                        <input type="text" class="form-control form-control-lg fw-bold text-success" id="modalSubtotal" readonly value="0">
                         <span class="input-group-text"><?php echo $devise; ?></span>
                     </div>
                 </div>
@@ -274,7 +354,8 @@ include 'header.php';
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
                 <button type="button" class="btn btn-success btn-lg" id="btnConfirmAdd">
-                     Ajouter au panier
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon-pharma" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>
+                    Ajouter au panier
                 </button>
             </div>
         </div>
@@ -421,19 +502,44 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fonction pour ouvrir le modal
     function openAddToCartModal(id, nom, prix, stockMax) {
         console.log('📋 Ouverture modal:', {id, nom, prix, stockMax});
-        
-        currentModalProduct = { id, nom, prix, stockMax };
-        
+        // Récupérer les lots disponibles pour ce produit (injecté côté PHP)
+        const lotsByProduit = <?php echo json_encode($lots_by_produit); ?>;
+        const lots = lotsByProduit[id] || [];
+        const lotSelect = document.getElementById('modalLotSelect');
+        lotSelect.innerHTML = '';
+        if (lots.length === 0) {
+            lotSelect.innerHTML = '<option value="">Aucun lot disponible</option>';
+            lotSelect.disabled = true;
+        } else {
+            lots.forEach(lot => {
+                lotSelect.innerHTML += `<option value="${lot.id_lot}" data-stock="${lot.quantite}" data-date="${lot.date_peremption}">Lot ${lot.numero_lot} (péremption: ${lot.date_peremption}, stock: ${lot.quantite})</option>`;
+            });
+            lotSelect.disabled = false;
+        }
+        // Par défaut, sélectionner le premier lot (FIFO)
+        let selectedLot = lots[0] || null;
+        let lotStock = selectedLot ? selectedLot.quantite : stockMax;
+        currentModalProduct = { id, nom, prix, stockMax: lotStock, id_lot: selectedLot ? selectedLot.id_lot : null };
         document.getElementById('modalProductName').textContent = nom;
-        document.getElementById('modalStockInfo').textContent = `📦 Stock disponible: ${stockMax}`;
-        
+        document.getElementById('modalStockInfo').textContent = `📦 Stock disponible: ${lotStock}`;
         modalPrice.value = prix;
         modalQty.value = 1;
-        modalQty.max = stockMax;
-        btnIncrease.disabled = stockMax <= 1;
-        
+        modalQty.max = lotStock;
+        btnIncrease.disabled = lotStock <= 1;
         updateModalSubtotal();
         modalInstance.show();
+        // Changement de lot = maj stock dispo
+        lotSelect.onchange = function() {
+            const opt = lotSelect.options[lotSelect.selectedIndex];
+            const stock = parseInt(opt.getAttribute('data-stock')) || 0;
+            currentModalProduct.id_lot = lotSelect.value;
+            currentModalProduct.stockMax = stock;
+            document.getElementById('modalStockInfo').textContent = `📦 Stock disponible: ${stock}`;
+            modalQty.value = 1;
+            modalQty.max = stock;
+            btnIncrease.disabled = stock <= 1;
+            updateModalSubtotal();
+        };
     }
     
     function updateModalSubtotal() {
@@ -463,7 +569,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Vérifier si déjà dans le panier
-        const existing = cart.find(item => item.id === currentModalProduct.id);
+        // Gestion du lot dans le panier (id+lot)
+        const existing = cart.find(item => item.id === currentModalProduct.id && item.id_lot === currentModalProduct.id_lot);
         if (existing) {
             existing.quantite += qty;
             if (existing.quantite > currentModalProduct.stockMax) {
@@ -475,7 +582,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 nom: currentModalProduct.nom,
                 prix: price,
                 quantite: qty,
-                stockMax: currentModalProduct.stockMax
+                stockMax: currentModalProduct.stockMax,
+                id_lot: currentModalProduct.id_lot
             });
         }
         

@@ -205,7 +205,7 @@ mb_internal_encoding('UTF-8');
                 </h1>
                 
                 <div class="navbar-nav flex-row order-md-last">
-                    <?php if ($products_alert_count > 0): ?>
+                    <?php if ($total_alertes_count > 0): ?>
                     <div class="nav-item d-none d-md-flex me-2">
                         <a href="notification.php" class="btn btn-outline-danger btn-sm">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -213,8 +213,8 @@ mb_internal_encoding('UTF-8');
                                 <path d="M12 9v2m0 4v.01"/>
                                 <path d="M5 19h14a2 2 0 0 0 1.84 -2.75l-7.1 -12.25a2 2 0 0 0 -3.5 0l-7.1 12.25a2 2 0 0 0 1.75 2.75"/>
                             </svg>
-                            <span class="d-none d-lg-inline">Alerte<?php echo $products_alert_count > 1 ? 's' : ''; ?></span>
-                            <span class="badge bg-red ms-1"><?php echo $products_alert_count; ?></span>
+                            <span class="d-none d-lg-inline">Alerte<?php echo $total_alertes_count > 1 ? 's' : ''; ?></span>
+                            <span class="badge bg-red ms-1"><?php echo $total_alertes_count; ?></span>
                         </a>
                     </div>
                     <?php endif; ?>
@@ -226,26 +226,21 @@ mb_internal_encoding('UTF-8');
                                 <path d="M10 5a2 2 0 0 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6"/>
                                 <path d="M9 17v1a3 3 0 0 0 6 0v-1"/>
                             </svg>
-                            <?php if ($products_alert_count > 0): ?>
-                            <span class="notification-badge"><?php echo $products_alert_count; ?></span>
+                            <?php if ($total_alertes_count > 0): ?>
+                            <span class="notification-badge"><?php echo $total_alertes_count; ?></span>
                             <?php endif; ?>
                         </a>
                         <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
                             <div class="dropdown-header">Notifications</div>
-                            <?php if ($products_alert_count > 0): ?>
+                            <?php if ($total_alertes_count > 0): ?>
                             <a href="notification.php" class="dropdown-item">
-                                <div class="d-flex">
-                                    <div>
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm text-danger" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                            <path d="M12 9v2m0 4v.01"/>
-                                            <path d="M5 19h14a2 2 0 0 0 1.84 -2.75l-7.1 -12.25a2 2 0 0 0 -3.5 0l-7.1 12.25a2 2 0 0 0 1.75 2.75"/>
-                                        </svg>
-                                    </div>
-                                    <div class="flex-fill ms-2">
-                                        <strong>Alerte Stock</strong>
-                                        <div class="text-muted small"><?php echo $products_alert_count; ?> produit<?php echo $products_alert_count > 1 ? 's' : ''; ?> en alerte</div>
-                                    </div>
+                                <div class="d-flex align-items-center mb-1">
+                                    <span class="badge bg-danger me-2">Stock</span>
+                                    <span><?php echo $products_alert_count; ?> produit<?php echo $products_alert_count > 1 ? 's' : ''; ?> en stock critique</span>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-warning me-2">Péremption</span>
+                                    <span><?php echo $peremptions_alert_count; ?> lot<?php echo $peremptions_alert_count > 1 ? 's' : ''; ?> proche(s) de la péremption</span>
                                 </div>
                             </a>
                             <?php else: ?>
@@ -450,6 +445,7 @@ mb_internal_encoding('UTF-8');
                                 </a>
                             </li>
                             
+
                             <!-- Vente -->
                             <li class="nav-item <?php echo (basename($_SERVER['PHP_SELF']) == 'vente.php') ? 'active' : ''; ?>">
                                 <a class="nav-link d-flex align-items-center px-3 py-2 rounded-2" href="vente.php">
@@ -465,23 +461,46 @@ mb_internal_encoding('UTF-8');
                                     <span class="nav-link-title fw-medium">Nouvelle Vente</span>
                                 </a>
                             </li>
+
+                            <!-- Suivi des péremptions -->
+                            <li class="nav-item <?php echo (basename($_SERVER['PHP_SELF']) == 'peremptions.php') ? 'active' : ''; ?>">
+                                <a class="nav-link d-flex align-items-center px-3 py-2 rounded-2" href="peremptions.php">
+                                    <span class="nav-link-icon d-inline-block me-2">
+                                        <i class="material-symbols-outlined text-warning" style="font-size:1.3em;vertical-align:middle;">warning</i>
+                                    </span>
+                                    <span class="nav-link-title fw-medium">Suivi des péremptions</span>
+                                </a>
+                            </li>
+
+                            <!-- Finance / Comptabilité (Dropdown) -->
+                            <li class="nav-item dropdown <?php echo in_array(basename($_SERVER['PHP_SELF']), ['depenses.php','caisse.php','rapport_caisse.php']) ? 'active' : ''; ?>">
+                                <a class="nav-link dropdown-toggle d-flex align-items-center px-3 py-2 rounded-2" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                                    <span class="nav-link-icon d-inline-block me-2">
+                                        <i class="material-symbols-outlined text-primary" style="font-size:1.3em;vertical-align:middle;">account_balance</i>
+                                    </span>
+                                    <span class="nav-link-title fw-medium">Finance</span>
+                                </a>
+                                <div class="dropdown-menu shadow-lg border-0" style="min-width: 220px; border-radius: 12px; margin-top: 8px;">
+                                    <a class="dropdown-item d-flex align-items-center <?php echo (basename($_SERVER['PHP_SELF']) == 'depenses.php') ? 'active' : ''; ?>" href="depenses.php">
+                                        <i class="material-symbols-outlined me-2 text-primary">receipt_long</i> Dépenses
+                                    </a>
+                                    <a class="dropdown-item d-flex align-items-center <?php echo (basename($_SERVER['PHP_SELF']) == 'caisse.php') ? 'active' : ''; ?>" href="caisse.php">
+                                        <i class="material-symbols-outlined me-2 text-success">savings</i> Situation de la caisse
+                                    </a>
+                                    <a class="dropdown-item d-flex align-items-center <?php echo (basename($_SERVER['PHP_SELF']) == 'rapport_caisse.php') ? 'active' : ''; ?>" href="rapport_caisse.php">
+                                        <i class="material-symbols-outlined me-2 text-warning">bar_chart</i> Rapport caisse
+                                    </a>
+                                </div>
+                            </li>
                             
                             <!-- Produits & Stock (Admin Only) -->
                             <?php if ($is_admin): ?>
                             <li class="nav-item <?php echo (basename($_SERVER['PHP_SELF']) == 'listes.php') ? 'active' : ''; ?>">
                                 <a class="nav-link d-flex align-items-center px-3 py-2 rounded-2" href="listes.php">
                                     <span class="nav-link-icon d-inline-block me-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                            <path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2"/>
-                                            <rect x="9" y="3" width="6" height="4" rx="2"/>
-                                            <line x1="9" y1="12" x2="9.01" y2="12"/>
-                                            <line x1="13" y1="12" x2="15" y2="12"/>
-                                            <line x1="9" y1="16" x2="9.01" y2="16"/>
-                                            <line x1="13" y1="16" x2="15" y2="16"/>
-                                        </svg>
+                                        <span class="material-symbols-outlined align-middle" style="font-size:1.3em;vertical-align:middle;">inventory_2</span>
                                     </span>
-                                    <span class="nav-link-title fw-medium">Produits & Stock</span>
+                                    <span class="nav-link-title fw-medium">Produits</span>
                                     <span class="badge bg-warning ms-2" style="font-size: 0.65rem;">Admin</span>
                                 </a>
                             </li>

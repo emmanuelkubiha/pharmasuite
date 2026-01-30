@@ -218,15 +218,20 @@ try {
      * @return int Nombre de lignes affectées
      */
     function db_update($table, $data, $where, $whereParams = []) {
+        // DEBUG : log la clause WHERE et les paramètres si problème
+        if (is_array($where)) {
+            error_log('ERREUR FATALE db_update: WHERE EST UN ARRAY ! ' . var_export($where, true));
+            error_log('db_update $data=' . var_export($data, true));
+            error_log('db_update $whereParams=' . var_export($whereParams, true));
+            throw new Exception('Erreur technique : clause WHERE malformée (array)');
+        }
         $sets = [];
         foreach (array_keys($data) as $key) {
             $sets[] = "$key = ?";
         }
         $setClause = implode(', ', $sets);
-        
         $sql = "UPDATE $table SET $setClause WHERE $where";
         $params = array_merge(array_values($data), $whereParams);
-        
         $stmt = db_query($sql, $params);
         return $stmt->rowCount();
     }

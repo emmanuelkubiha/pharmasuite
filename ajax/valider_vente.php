@@ -145,14 +145,18 @@ try {
     $sql_detail = "INSERT INTO details_vente (
         id_vente,
         id_produit,
+        nom_produit,
         quantite,
         prix_unitaire,
-        sous_total
-    ) VALUES (?, ?, ?, ?, ?)";
+        prix_achat_unitaire,
+        prix_total,
+        benefice_ligne,
+        remise_ligne
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
     
     foreach ($cart as $item) {
         // Vérifier le stock
-        $produit = db_fetch_one("SELECT quantite_stock, nom_produit FROM produits WHERE id_produit = ?", [$item['id']]);
+        $produit = db_fetch_one("SELECT quantite_stock, nom_produit, prix_achat FROM produits WHERE id_produit = ?", [$item['id']]);
         
         if (!$produit) {
             throw new Exception("Produit ID {$item['id']} introuvable");
@@ -162,13 +166,23 @@ try {
             throw new Exception("Stock insuffisant pour {$produit['nom_produit']} (disponible: {$produit['quantite_stock']}, demandé: {$item['quantity']})");
         }
         
-        // Insérer le détail
+        // Calculs pharmacie
+        $prix_achat = floatval($produit['prix_achat']);
+        $prix_vente = floatval($item['price']);
+        $quantite = intval($item['quantity']);
+        $remise = isset($item['remise']) ? floatval($item['remise']) : 0.0;
+        $prix_total = $prix_vente * $quantite - $remise;
+        $benefice = ($prix_vente - $prix_achat) * $quantite - $remise;
         db_execute($sql_detail, [
             $id_vente,
             $item['id'],
-            $item['quantity'],
-            $item['price'],
-            $item['subtotal']
+            $produit['nom_produit'],
+            $quantite,
+            $prix_vente,
+            $prix_achat,
+            $prix_total,
+            $benefice,
+            $remise
         ]);
         
         // Déduire du stock

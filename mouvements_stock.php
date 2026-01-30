@@ -517,6 +517,33 @@ require_once('header.php');
     </div>
 </div>
 
+<script>
+// Pré-remplissage automatique du formulaire si paramètres GET présents
+document.addEventListener('DOMContentLoaded', function() {
+    const url = new URL(window.location.href);
+    const type = url.searchParams.get('type_mouvement');
+    const id_produit = url.searchParams.get('id_produit');
+    const quantite = url.searchParams.get('quantite');
+    const motif = url.searchParams.get('motif');
+    if (type) {
+        const typeSelect = document.getElementById('type_mouvement');
+        if (typeSelect) typeSelect.value = type;
+    }
+    if (id_produit) {
+        const prodSelect = document.getElementById('id_produit');
+        if (prodSelect) prodSelect.value = id_produit;
+    }
+    if (quantite) {
+        const quantiteInput = document.getElementById('quantite');
+        if (quantiteInput) quantiteInput.value = quantite;
+    }
+    if (motif) {
+        const motifInput = document.getElementById('motif');
+        if (motifInput) motifInput.value = decodeURIComponent(motif);
+    }
+});
+</script>
+
 <?php require_once('footer.php'); ?>
 
 <script>
@@ -576,17 +603,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 let html = '<strong>' + produit.nom_produit + '</strong><br>';
-                
+                // Infos complémentaires
+                if (produit.dosage) html += '<span class="badge bg-info text-dark me-2">Dosage : ' + produit.dosage + '</span>';
+                if (produit.conditionnement) html += '<span class="badge bg-secondary text-white me-2">Cond. : ' + produit.conditionnement + '</span>';
+                if (produit.date_peremption) html += '<span class="badge bg-warning text-dark me-2">Péremption : ' + produit.date_peremption + '</span>';
+                if (produit.numero_lot) html += '<span class="badge bg-primary text-white me-2">Lot : ' + produit.numero_lot + '</span>';
+                html += '<br>';
                 // Stock total
                 html += '<span class="badge bg-cyan text-dark me-2">Stock total: ' + produit.stock_total + '</span>';
-                
                 // Prix
                 if (produit.prix_vente) {
                     html += '<span class="badge bg-success text-white me-2">Prix vente: ' + parseFloat(produit.prix_vente).toFixed(2) + ' <?php echo $devise; ?></span>';
                 }
-                
                 html += '<br><br><strong style="font-size: 0.75rem;">Stock par dépôt:</strong><br>';
-                
                 // Stock par dépôt
                 if (produit.stock_par_depot && produit.stock_par_depot.length > 0) {
                     produit.stock_par_depot.forEach(depot => {
@@ -596,7 +625,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     html += '<small class="text-muted">Aucun stock dans les dépôts</small><br>';
                 }
-                
                 // Seuils
                 html += '<br><small class="text-muted">Seuil alerte: ' + produit.seuil_alerte + ' | ';
                 html += 'Seuil critique: ' + produit.seuil_critique + '</small>';

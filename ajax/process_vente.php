@@ -107,12 +107,32 @@ try {
         
         // Ajouter les détails de vente et mettre à jour le stock
         foreach ($cart as $item) {
-            // Insérer le détail de vente
+            // Récupérer le nom du produit pour l'historique (obligatoire)
+            $produit_info = db_fetch_one("SELECT nom_produit FROM produits WHERE id_produit = ?", [$item['id']]);
+            if (!$produit_info || empty($produit_info['nom_produit'])) {
+                throw new Exception("Nom du produit introuvable pour l'ID " . $item['id']);
+            }
+            // Récupérer le prix d'achat du produit
+            $prix_achat = 0.00;
+            $row_prix = db_fetch_one("SELECT prix_achat FROM produits WHERE id_produit = ?", [$item['id']]);
+            if ($row_prix && isset($row_prix['prix_achat'])) {
+                $prix_achat = floatval($row_prix['prix_achat']);
+            }
+            $quantite = intval($item['quantite']);
+            $prix_vente = floatval($item['prix']);
+            $remise = isset($item['remise']) ? floatval($item['remise']) : 0.0;
+            $prix_total = $prix_vente * $quantite - $remise;
+            $benefice = ($prix_vente - $prix_achat) * $quantite - $remise;
             db_insert('details_vente', [
                 'id_vente' => $id_vente,
                 'id_produit' => $item['id'],
-                'quantite' => $item['quantite'],
-                'prix_unitaire' => $item['prix']
+                'nom_produit' => $produit_info['nom_produit'],
+                'quantite' => $quantite,
+                'prix_unitaire' => $prix_vente,
+                'prix_achat_unitaire' => $prix_achat,
+                'prix_total' => $prix_total,
+                'benefice_ligne' => $benefice,
+                'remise_ligne' => $remise
             ]);
             
             // Mettre à jour le stock du produit

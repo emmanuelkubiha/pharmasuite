@@ -20,7 +20,7 @@ try {
             $nom = $_POST['nom_depot'] ?? '';
             $description = $_POST['description'] ?? '';
             $adresse = $_POST['adresse'] ?? '';
-            $est_principal = isset($_POST['est_principal']) ? 1 : 0;
+            $est_principal = isset($_POST['est_principal']) ? intval($_POST['est_principal']) : 0;
             
             if (empty($nom)) {
                 throw new Exception('Nom du dépôt requis');
@@ -46,11 +46,17 @@ try {
             break;
             
         case 'update':
-            $id = $_POST['id_depot'] ?? 0;
+            $id = isset($_POST['id_depot']) ? intval($_POST['id_depot']) : 0;
+            // DEBUG: log la valeur et le type de $id
+            error_log('DEBUG depots.php update: id_depot=' . var_export($id, true) . ' type=' . gettype($id));
+            if (is_array($id)) {
+                error_log('ERREUR FATALE depots.php update: id_depot EST UN ARRAY ! ' . var_export($id, true));
+                throw new Exception('Erreur technique : id_depot malformé (array)');
+            }
             $nom = $_POST['nom_depot'] ?? '';
             $description = $_POST['description'] ?? '';
             $adresse = $_POST['adresse'] ?? '';
-            $est_principal = isset($_POST['est_principal']) ? 1 : 0;
+            $est_principal = isset($_POST['est_principal']) ? intval($_POST['est_principal']) : 0;
             
             if (empty($id) || empty($nom)) {
                 throw new Exception('Données incomplètes');
@@ -77,7 +83,9 @@ try {
                 'description' => $description,
                 'adresse' => $adresse,
                 'est_principal' => $est_principal
-            ], ['id_depot' => $id]);
+            ], 'id_depot = ?', [$id]);
+            // DEBUG: log la requête db_update
+            error_log('DEBUG depots.php update: db_update where id_depot=' . var_export($id, true));
             
             if ($updated !== false) {
                 $response = ['success' => true, 'message' => 'Dépôt modifié avec succès'];
@@ -87,7 +95,13 @@ try {
             break;
             
         case 'delete':
-            $id = $_POST['id_depot'] ?? 0;
+            $id = isset($_POST['id_depot']) ? intval($_POST['id_depot']) : 0;
+            // DEBUG: log la valeur et le type de $id pour suppression
+            error_log('DEBUG depots.php delete: id_depot=' . var_export($id, true) . ' type=' . gettype($id));
+            if (is_array($id)) {
+                error_log('ERREUR FATALE depots.php delete: id_depot EST UN ARRAY ! ' . var_export($id, true));
+                throw new Exception('Erreur technique : id_depot malformé (array)');
+            }
             
             if (empty($id)) {
                 throw new Exception('ID manquant');
@@ -108,7 +122,11 @@ try {
                 throw new Exception('Impossible de supprimer : ce dépôt contient du stock (' . $stock['total'] . ' unités)');
             }
             
-            $deleted = db_update('depots', ['est_actif' => 0], ['id_depot' => $id]);
+            $deleted = db_update('depots', ['est_actif' => 0], 'id_depot = ?', [$id]);
+                                    // DEBUG: log la requête db_update suppression
+                                    error_log('DEBUG depots.php delete: db_update where id_depot=' . var_export($id, true));
+                        // DEBUG: log la requête db_update suppression
+                        error_log('DEBUG depots.php delete: db_update where id_depot=' . var_export($id, true));
             
             if ($deleted !== false) {
                 $response = ['success' => true, 'message' => 'Dépôt supprimé avec succès'];

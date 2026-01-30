@@ -484,7 +484,7 @@ include 'header.php';
                                 </h1>
                                 <div class="mt-2">
                                     <span class="badge" style="background: rgba(255,255,255,0.25); color: white; padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; margin-right: 10px;">
-                                        <?php echo $is_admin ? 'Administrateur' : 'Vendeur'; ?>
+                                        <?php echo $is_admin ? 'Gérant' : 'Pharmacien(ne)'; ?>
                                     </span>
                                     <span style="color: rgba(255,255,255,0.9); font-size: 0.95rem; font-weight: 500;">
                                         <?php echo e($nom_boutique); ?>
@@ -584,7 +584,8 @@ include 'header.php';
                 <div class="col-md-3 col-sm-6">
                     <a href="vente.php" class="action-btn w-100">
                         <div class="action-btn-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="6" cy="19" r="2" /><circle cx="17" cy="19" r="2" /><path d="M17 17h-11v-14h-2" /><path d="M6 5l14 1l-1 7h-13" /></svg>
+                            <!-- Icône pilule pharmacie -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="2" y="11" width="20" height="6" rx="3" fill="#22c55e"/><rect x="11" y="2" width="6" height="20" rx="3" fill="#16a34a"/></svg>
                         </div>
                         <span>Nouvelle vente</span>
                     </a>
@@ -592,7 +593,8 @@ include 'header.php';
                 <div class="col-md-3 col-sm-6">
                     <a href="mes_ventes.php" class="action-btn w-100">
                         <div class="action-btn-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                            <!-- Icône stéthoscope -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M6 3v6a6 6 0 0 0 12 0V3" stroke="#22c55e" stroke-width="2" fill="none"/><circle cx="6" cy="3" r="2" fill="#16a34a"/><circle cx="18" cy="3" r="2" fill="#16a34a"/></svg>
                         </div>
                         <span>Mes Ventes</span>
                     </a>
@@ -600,7 +602,8 @@ include 'header.php';
                 <div class="col-md-3 col-sm-6">
                     <a href="profil.php" class="action-btn w-100">
                         <div class="action-btn-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="4"></circle><path d="M6.168 18.849a4 4 0 0 1 3.832 -2.849h4a4 4 0 0 1 3.834 2.855"></path></svg>
+                            <!-- Icône flacon médicament -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="7" y="2" width="10" height="20" rx="5" fill="#22c55e"/><rect x="9" y="6" width="6" height="10" rx="3" fill="#fff"/></svg>
                         </div>
                         <span>Mon Profil</span>
                     </a>
@@ -608,7 +611,8 @@ include 'header.php';
                 <div class="col-md-3 col-sm-6">
                     <a href="rapports.php" class="action-btn w-100">
                         <div class="action-btn-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M9 8m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M15 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /></svg>
+                            <!-- Icône graphique médical -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="12" width="4" height="8" rx="2" fill="#22c55e"/><rect x="9" y="8" width="4" height="12" rx="2" fill="#16a34a"/><rect x="15" y="4" width="4" height="16" rx="2" fill="#22c55e"/></svg>
                         </div>
                         <span>Rapports</span>
                     </a>
@@ -619,7 +623,8 @@ include 'header.php';
                 <div class="col-md-3 col-sm-6">
                     <a href="listes.php?page=categories" class="action-btn w-100">
                         <div class="action-btn-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><rect x="14" y="14" width="6" height="6" rx="1" /></svg>
+                            <!-- Icône croix pharmacie -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 64 64" fill="none"><rect x="0" y="0" width="64" height="64" rx="16" fill="#22c55e"/><rect x="28" y="14" width="8" height="36" rx="3" fill="#fff"/><rect x="14" y="28" width="36" height="8" rx="3" fill="#fff"/></svg>
                         </div>
                         <span>Catégories</span>
                     </a>

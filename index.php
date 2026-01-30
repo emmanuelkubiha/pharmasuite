@@ -61,23 +61,53 @@
 <!-- Hero Section -->
 <section class="px-6 lg:px-20 py-8">
 <div class="max-w-[1280px] mx-auto">
-<div class="relative min-h-[560px] flex flex-col items-start justify-end p-8 lg:p-16 rounded-xl overflow-hidden bg-cover bg-center" data-alt="Intérieur d'une pharmacie moderne et lumineuse" style='background-image: linear-gradient(rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.6) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuAIwSf5tPkinwq_n05SuOQ9oN7Bihocfa_yuYSOZrBSeDN1E366yBfozbrfVwtPRkkVmHvHg-3IUp7NjDbJbyHXsXG31zKCqq4TKsIZfE1x__VKfOXjCxLG4-umHvb3pfGn7iehJYxwpgQ0QFIn7C3fd89ipkc-BYT8NsRR35R_Okuo1BSABNf01fEIdBJCnCKRofxKc2gw6XiQL4aVSRErzRsRDsVqUrbLyuQaw7PVcB4Yg5KNJvfvVO0dBXFlwwtlh5oeGzT_D-I");'>
-<div class="max-w-[700px] space-y-4">
-<h1 class="text-white text-4xl lg:text-6xl font-black leading-tight tracking-tight">
-                            Santé & Agriculture, <br/><span class="text-primary">Votre Priorité à Bukavu</span>
-</h1>
-<p class="text-white/90 text-lg lg:text-xl font-medium max-w-2xl">
-                            LOBIKO PHARMACIE - AGRO VETO vous accompagne à Bukavu : médicaments, intrants agro-vétérinaires, conseils experts, innovation digitale et accompagnement personnalisé pour la santé et l’agriculture.
-                        </p>
-<div class="pt-4">
-<a href="#produits" class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-base font-bold transition-all shadow-lg flex items-center gap-1" style="width:auto; min-width:0; display:inline-flex;">
-    Explorer nos produits
-    <span class="material-symbols-outlined" style="font-size:1.1em;">arrow_forward</span>
-</a>
+    <div class="relative min-h-[560px] flex flex-col items-start justify-end p-8 lg:p-16 rounded-xl overflow-hidden bg-gray-100">
+        <!-- Carrousel d'images -->
+        <div id="carousel-pharma" class="relative w-full h-[400px] rounded-xl overflow-hidden mb-8">
+            <div class="absolute inset-0 w-full h-full">
+                <img src="images/carrousel1.jpg" class="w-full h-full object-cover absolute transition-opacity duration-700 opacity-100 carousel-img" style="z-index:3;" alt="Pharmacie 1" />
+                <img src="images/carrousel3.jpg" class="w-full h-full object-cover absolute transition-opacity duration-700 opacity-0 carousel-img" style="z-index:2;" alt="Pharmacie 2" />
+                <img src="images/carrousel4.jpg" class="w-full h-full object-cover absolute transition-opacity duration-700 opacity-0 carousel-img" style="z-index:1;" alt="Pharmacie 3" />
+                <img src="images/carrousel5.jpg" class="w-full h-full object-cover absolute transition-opacity duration-700 opacity-0 carousel-img" style="z-index:0;" alt="Pharmacie 4" />
+            </div>
+            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                <button class="w-3 h-3 rounded-full bg-primary/70 carousel-dot" data-index="0"></button>
+                <button class="w-3 h-3 rounded-full bg-primary/30 carousel-dot" data-index="1"></button>
+                <button class="w-3 h-3 rounded-full bg-primary/30 carousel-dot" data-index="2"></button>
+                <button class="w-3 h-3 rounded-full bg-primary/30 carousel-dot" data-index="3"></button>
+            </div>
+        </div>
+        <div class="max-w-[700px] space-y-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md rounded-xl p-8 border border-gray-200 dark:border-gray-700 shadow-xl">
+            <h1 class="text-gray-900 dark:text-white text-4xl lg:text-6xl font-black leading-tight tracking-tight">
+                Santé & Agriculture, <br/><span class="text-primary">Votre Priorité à Bukavu</span>
+            </h1>
+            <p class="text-gray-700 dark:text-gray-100 text-lg lg:text-xl font-medium max-w-2xl">
+                LOBIKO PHARMACIE - AGRO VETO vous accompagne à Bukavu : médicaments, intrants agro-vétérinaires, conseils experts, innovation digitale et accompagnement personnalisé pour la santé et l’agriculture.
+            </p>
+            <div class="pt-4">
+                <a href="#produits" class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-base font-bold transition-all shadow-lg flex items-center gap-1" style="width:auto; min-width:0; display:inline-flex;">
+                    Explorer nos produits
+                    <span class="material-symbols-outlined" style="font-size:1.1em;">arrow_forward</span>
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
-</div>
-</div>
-</div>
+<script>
+// Carrousel JS
+const imgs = document.querySelectorAll('.carousel-img');
+const dots = document.querySelectorAll('.carousel-dot');
+let current = 0;
+function showSlide(idx) {
+    imgs.forEach((img, i) => img.style.opacity = (i === idx ? '1' : '0'));
+    dots.forEach((dot, i) => dot.classList.toggle('bg-primary/70', i === idx));
+    dots.forEach((dot, i) => dot.classList.toggle('bg-primary/30', i !== idx));
+    current = idx;
+}
+dots.forEach((dot, i) => dot.addEventListener('click', () => showSlide(i)));
+setInterval(() => showSlide((current + 1) % imgs.length), 5000);
+showSlide(0);
+</script>
 </section>
 <!-- About Section (Qui sommes-nous) -->
 <section class="px-6 lg:px-20 py-20 bg-white dark:bg-background-dark/30" id="about">
@@ -104,11 +134,33 @@
 </div>
 </div>
 <div class="relative">
-<div class="w-full aspect-[4/3] rounded-xl bg-center bg-cover shadow-2xl" data-alt="Équipe de pharmaciens souriants discutant professionnellement" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuC3vkps2TQk6Ziyya8VJU5Nd8GP2w6PIceVwD4ylm1DHrJvstUxo-oVwOyQZqNeNo4JMP_uSUlQdv1xnIWsxHI9s2K4wOZbBxcxPfzDsegWr0HbURzXjJuKN9T99GNb3PC8uC073OP-zd6b0BgtCnouL5ujAVh0ZWtCBp0tuSiSNo2SKsF4UX-HnWW89XH7st8iA38OilKt-Ul7z5ZR_J3W5u2YrnywXwtyEf4im1RJikp-Bj8RjK9jloc7CqcjcLqsnzTtlVtWSC4");'>
+<div class="w-full aspect-[4/3] rounded-xl shadow-2xl overflow-hidden flex flex-col items-center justify-center bg-gray-100" data-alt="Équipe de pharmaciens souriants discutant professionnellement">
+    <img src="images/image.png" alt="Équipe de pharmaciens" class="w-full h-full object-contain object-center" style="max-width:100%;max-height:100%;" />
+        <?php
+        // Fallback logo logic
+        $logo_path = null;
+        $try_paths = [
+            'uploads/logos/' . ($logo_boutique ?? ''),
+            'images/image.png',
+            'assets/img/logo.png',
+        ];
+        foreach ($try_paths as $p) {
+            if (!empty($p) && file_exists($p) && is_file($p)) {
+                $logo_path = $p;
+                break;
+            }
+        }
+        ?>
+        <div class="absolute -bottom-6 -left-6 bg-primary p-6 rounded-xl shadow-xl hidden md:block flex flex-col items-center justify-center">
+            <?php if ($logo_path): ?>
+                <img src="<?= e($logo_path) ?>" alt="Logo pharmacie" style="max-width:70px;max-height:70px;object-fit:contain;" class="mb-2 rounded-lg bg-white shadow" />
+            <?php else: ?>
+                <!-- Icône medical_services SVG fallback -->
+                <span class="material-symbols-outlined text-white text-4xl">medical_services</span>
+            <?php endif; ?>
+            <p class="text-white font-bold mt-2">Services d'urgence 24h/7j</p>
+        </div>
 </div>
-<div class="absolute -bottom-6 -left-6 bg-primary p-6 rounded-xl shadow-xl hidden md:block">
-<span class="material-symbols-outlined text-white text-4xl">medical_services</span>
-<p class="text-white font-bold mt-2">Services d'urgence 24/7</p>
 </div>
 </div>
 </div>
@@ -203,15 +255,9 @@
 </div>
 </div>
 <div class="lg:w-7/12">
-<div class="w-full h-[400px] rounded-2xl overflow-hidden shadow-inner bg-gray-100 dark:bg-gray-800 flex items-center justify-center relative">
-<!-- Placeholder for Map -->
-<div class="absolute inset-0 bg-cover bg-center grayscale" data-location="Paris" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBT_pL_fPILgPiFiWIPvPdLRDf1Acx0kK2ujoDRRp_bB4FtGhk9u7O7PoZLbQhPvB3hM1eOXe0RCEWp-8gY8I4nA2ZYJqnN86BSCdd2sXGIh4y17RNfncfkW1qwroXDGAGoBWLQMIbXBm7nuqxJgfj5F4GmDKRKvI4nyApdlYFyqfDzfolJZ5M197BffX7lHBQWkItZEodjw9nzkdPReflmhgrCoUaqvlIOdJwLcgrrxKOJdJEYGE4VbP6dwi5huWeGJVP7Cs_4rEs"); opacity: 0.3;'></div>
-<div class="z-10 text-center p-8 bg-white/80 dark:bg-gray-900/80 backdrop-blur rounded-xl border border-gray-200 dark:border-gray-700">
-<span class="material-symbols-outlined text-primary text-5xl mb-2">map</span>
-<p class="font-bold dark:text-white">Carte Interactive</p>
-<p class="text-sm text-gray-500">Cliquez pour voir l'itinéraire complet sur Google Maps</p>
-</div>
-</div>
+    <div class="w-full h-[400px] rounded-2xl overflow-hidden shadow-inner bg-gray-100 dark:bg-gray-800 flex items-center justify-center relative">
+        <iframe src="https://www.google.com/maps?hl=fr&amp;q=Nyawera,+Bukavu,+RDC&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=&amp;output=embed" width="100%" height="400" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" class="rounded-2xl"></iframe>
+    </div>
 </div>
 </div>
 </div>

@@ -2,28 +2,33 @@
 require_once('protection_pages.php');
 $page_title = 'Listes';
 $page = isset($_GET['page']) ? $_GET['page'] : 'produits';
-$available_pages = ['produits', 'clients', 'categories', 'mouvements', 'ventes', 'fournisseurs', 'depots'];
+
+$available_pages = ['produits', 'clients', 'categories', 'mouvements', 'ventes', 'fournisseurs', 'depots', 'peremptions', 'depenses'];
 if (!in_array($page, $available_pages)) $page = 'produits';
 
 switch($page) {
-    case 'produits': $page_title = 'Gestion des Produits'; break;
+    case 'produits': $page_title = 'Gestion des Médicaments'; break;
     case 'clients': $page_title = 'Gestion des Clients'; break;
     case 'categories': $page_title = 'Gestion des Catégories'; break;
     case 'mouvements': $page_title = 'Mouvements de Stock'; break;
     case 'ventes': $page_title = 'Historique des Ventes'; break;
     case 'fournisseurs': $page_title = 'Gestion des Fournisseurs'; break;
     case 'depots': $page_title = 'Gestion des Dépôts'; break;
+    case 'peremptions': $page_title = 'Suivi des péremptions'; break;
+    case 'depenses': $page_title = 'Dépenses & Comptabilité'; break;
 }
 
 $is_vendeur = ($user_niveau == NIVEAU_VENDEUR);
 $page_hints = [
-    'produits' => 'Astuce : classez vos produits par catégorie et surveillez les seuils pour éviter les ruptures.',
+    'produits' => 'Astuce : renseignez le lot, le dosage, la date de péremption et le conditionnement pour chaque médicament. Classez vos médicaments par catégorie et surveillez les seuils pour éviter les ruptures.',
     'clients' => 'Astuce : complétez téléphone et email pour mieux relancer vos clients.',
     'categories' => 'Astuce : des catégories claires accélèrent la recherche en caisse.',
-    'mouvements' => 'Astuce : notez un motif précis à chaque ajustement de stock.',
-    'ventes' => 'Astuce : contrôlez montants et clients avant d\'imprimer les factures.',
+    'mouvements' => 'Astuce : notez un motif précis à chaque ajustement de stock. Utilisez les motifs pharmacie (péremption, don, perte, etc.).',
+    'ventes' => 'Astuce : contrôlez montants, lots et clients avant d\'imprimer les factures. Sélectionnez le lot selon la méthode FIFO.',
     'fournisseurs' => 'Astuce : gardez à jour les coordonnées de vos fournisseurs pour faciliter les commandes.',
-    'depots' => 'Astuce : organisez vos emplacements de stockage pour optimiser la gestion du stock.'
+    'depots' => 'Astuce : organisez vos emplacements de stockage pour optimiser la gestion du stock.',
+    'peremptions' => 'Astuce : surveillez les lots proches de la date de péremption pour éviter les pertes et anticiper les actions.',
+    'depenses' => 'Astuce : saisissez toutes les sorties de caisse (achats, charges, salaires, etc.) pour un suivi comptable précis. Analysez la différence caisse/ventes.'
 ];
 $page_hint = $page_hints[$page];
 
@@ -145,6 +150,72 @@ require_once('header.php');
             </div>
         </div>
     </div>
+<script>
+// Remplissage du modal produit avec toutes les infos depuis AJAX
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.btn-edit-product').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const id = btn.getAttribute('data-product') ? JSON.parse(btn.getAttribute('data-product')).id_produit : btn.getAttribute('data-id');
+            if (!id) return;
+            fetch('ajax/produits.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: new URLSearchParams({action: 'get_product', id_produit: id})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success || !data.produit) {
+                    showAlertModal({
+                        title: 'Erreur',
+                        message: data.message || 'Impossible de charger le produit',
+                        type: 'error',
+                        onClose: () => location.reload()
+                    });
+                    return;
+                }
+                const p = data.produit;
+                document.getElementById('product_id').value = p.id_produit || '';
+                document.getElementById('product_name').value = p.nom_produit || '';
+                document.getElementById('product_barcode').value = p.code_barre || '';
+                document.getElementById('product_dosage').value = p.dosage || '';
+                document.getElementById('product_conditionnement').value = p.conditionnement || '';
+                document.getElementById('product_peremption').value = p.date_peremption ? p.date_peremption.substr(0,10) : '';
+                document.getElementById('product_category').value = p.id_categorie ?? '';
+                document.getElementById('product_fournisseur').value = p.id_fournisseur_principal ?? '';
+                document.getElementById('product_unit').value = p.unite_mesure ?? '';
+                document.getElementById('product_purchase_price').value = (p.prix_achat !== undefined && p.prix_achat !== null) ? p.prix_achat : '';
+                document.getElementById('product_sale_price').value = (p.prix_vente !== undefined && p.prix_vente !== null) ? p.prix_vente : '';
+                document.getElementById('product_stock').value = (p.quantite_stock !== undefined && p.quantite_stock !== null) ? p.quantite_stock : '';
+                document.getElementById('product_min_stock').value = (p.seuil_alerte !== undefined && p.seuil_alerte !== null) ? p.seuil_alerte : '';
+                document.getElementById('product_description').value = p.description ?? '';
+                // Lot (affiche le lot existant, sinon vide, toujours visible en readonly)
+                if (document.getElementById('product_lot')) {
+                    document.getElementById('product_lot').value = (p.numero_lot !== undefined && p.numero_lot !== null && p.numero_lot !== '') ? p.numero_lot : 'Aucun lot';
+                    document.getElementById('product_lot').readOnly = true;
+                    document.getElementById('product_lot').style.background = '#f8f9fa';
+                }
+                // Dépôt initial (affiche le dépôt existant, sinon vide, et désactive)
+                if (document.getElementById('product_depot')) {
+                    document.getElementById('product_depot').value = (p.id_depot !== undefined && p.id_depot !== null) ? p.id_depot : '';
+                    document.getElementById('product_depot').disabled = true;
+                }
+                // Afficher le modal
+                var modalEl = document.getElementById('modalProduit');
+                var modal = new bootstrap.Modal(modalEl);
+                modal.show();
+                document.getElementById('modalProduitTitle').textContent = 'Modifier le médicament';
+
+                // Ajout : forcer reload après fermeture du modal d'édition pour éviter overlay
+                modalEl.addEventListener('hidden.bs.modal', function handler() {
+                    location.reload();
+                    modalEl.removeEventListener('hidden.bs.modal', handler);
+                });
+            })
+            .catch(() => showAlertModal({title: 'Erreur', message: 'Erreur réseau', type: 'error'}));
+        });
+    });
+});
+</script>
 
     <!-- Navigation moderne avec onglets -->
     <div class="row mb-4">
@@ -155,8 +226,10 @@ require_once('header.php');
                 <li class="nav-item"><a href="?page=categories" class="nav-link <?php echo $page === 'categories' ? 'active' : ''; ?>">Catégories</a></li>
                 <li class="nav-item"><a href="?page=fournisseurs" class="nav-link <?php echo $page === 'fournisseurs' ? 'active' : ''; ?>">Fournisseurs</a></li>
                 <li class="nav-item"><a href="?page=depots" class="nav-link <?php echo $page === 'depots' ? 'active' : ''; ?>">Dépôts</a></li>
-                <li class="nav-item"><a href="?page=mouvements" class="nav-link <?php echo $page === 'mouvements' ? 'active' : ''; ?>">Mouvements</a></li>
+                <li class="nav-item"><a href="?page=mouvements" class="nav-link <?php echo $page === 'mouvements' ? 'active' : ''; ?>">Mouvements de stock</a></li>
                 <li class="nav-item"><a href="?page=ventes" class="nav-link <?php echo $page === 'ventes' ? 'active' : ''; ?>">Ventes</a></li>
+                <li class="nav-item"><a href="?page=peremptions" class="nav-link <?php echo $page === 'peremptions' ? 'active' : ''; ?>">Suivi des péremptions</a></li>
+                <li class="nav-item"><a href="?page=depenses" class="nav-link <?php echo $page === 'depenses' ? 'active' : ''; ?>">Dépenses & Comptabilité</a></li>
             </ul>
         </div>
     </div>
@@ -193,13 +266,7 @@ require_once('header.php');
                                 <h3 class="mb-0"><?php echo $total_produits; ?></h3>
                             </div>
                             <div class="text-primary">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="32" height="32" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                    <path d="M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5" />
-                                    <path d="M12 12l8 -4.5" />
-                                    <path d="M12 12l0 9" />
-                                    <path d="M12 12l-8 -4.5" />
-                                </svg>
+                                <span class="material-symbols-outlined" style="font-size:2rem;vertical-align:middle;">inventory_2</span>
                             </div>
                         </div>
                     </div>
@@ -246,21 +313,14 @@ require_once('header.php');
             <div class="card list-card">
                 <div class="card-header d-flex justify-content-between align-items-center py-3">
                     <h3 class="card-title mb-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                            <path d="M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5" />
-                        </svg>
-                        Liste des produits
+                        <span class="material-symbols-outlined me-2" style="font-size:1.7rem;vertical-align:middle;">inventory_2</span>
+                        Produits
                         <span class="badge bg-primary ms-2"><?php echo $total_produits; ?></span>
                     </h3>
                     <div>
                         <?php if (!$is_vendeur): ?>
                         <button type="button" id="btnAddProduct" class="btn btn-primary btn-action" data-bs-toggle="tooltip" title="Créer un nouveau produit">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                <path d="M12 5v14" />
-                                <path d="M5 12h14" />
-                            </svg>
+                            <span class="material-symbols-outlined align-middle" style="font-size:1.3em;vertical-align:middle;">add</span>
                             Nouveau produit
                         </button>
                         <?php endif; ?>
@@ -269,21 +329,21 @@ require_once('header.php');
                 <div class="card-body border-bottom pb-2">
                     <div class="input-icon">
                         <span class="input-icon-addon">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                <circle cx="10" cy="10" r="7" />
-                                <line x1="21" y1="21" x2="15" y2="15" />
-                            </svg>
+                            <span class="material-symbols-outlined align-middle" style="font-size:1.3em;vertical-align:middle;">search</span>
                         </span>
-                        <input type="text" id="searchProduits" class="form-control" placeholder="Rechercher un produit (nom, code, catégorie)..." />
+                        <input type="text" id="searchProduits" class="form-control" placeholder="Rechercher un produit (nom, lot, code, catégorie)..." />
                     </div>
                 </div>
                 <div class="table-responsive">
                     <table class="table card-table table-vcenter table-hover">
                         <thead>
                             <tr>
-                                <th data-bs-toggle="tooltip" title="Image ou initiales du produit">Image</th>
-                                <th data-bs-toggle="tooltip" title="Nom complet du produit">Nom</th>
+                                <th data-bs-toggle="tooltip" title="Image ou initiales du médicament">Image</th>
+                                <th data-bs-toggle="tooltip" title="Nom complet du médicament">Nom</th>
+                                <th data-bs-toggle="tooltip" title="Lot du médicament">Lot</th>
+                                <th data-bs-toggle="tooltip" title="Dosage (ex : 500mg, 1g/5ml)">Dosage</th>
+                                <th data-bs-toggle="tooltip" title="Date de péremption">Péremption</th>
+                                <th data-bs-toggle="tooltip" title="Conditionnement (ex : boîte de 30, flacon 100ml)">Conditionnement</th>
                                 <th data-bs-toggle="tooltip" title="Catégorie d'appartenance">Catégorie</th>
                                 <?php if (!$is_vendeur): ?><th class="text-end" data-bs-toggle="tooltip" title="Coût d'achat (réservé gestionnaire)">Prix Achat</th><?php endif; ?>
                                 <th class="text-end" data-bs-toggle="tooltip" title="Tarif de vente conseillé">Prix Vente</th>
@@ -314,12 +374,16 @@ require_once('header.php');
                                     <td>
                                         <div class="fw-bold"><?php echo e($p['nom_produit']); ?></div>
                                         <?php if (!empty($p['code_barre'])): ?>
-                                            <small class="text-muted"><?php echo e($p['code_barre']); ?></small>
+                                            <small class="text-muted">Code-barres : <?php echo e($p['code_barre']); ?></small>
                                         <?php endif; ?>
                                     </td>
+                                    <td><?php echo e($p['lot'] ?? ''); ?></td>
+                                    <td><?php echo e($p['dosage'] ?? ''); ?></td>
+                                    <td><?php echo !empty($p['date_peremption']) ? date('d/m/Y', strtotime($p['date_peremption'])) : ''; ?></td>
+                                    <td><?php echo e($p['conditionnement'] ?? ''); ?></td>
                                     <td>
                                         <?php if (!empty($p['nom_categorie'])): ?>
-                                            <span class="badge badge-category" data-bs-toggle="tooltip" title="Catégorie du produit"><?php echo e($p['nom_categorie']); ?></span>
+                                            <span class="badge badge-category" data-bs-toggle="tooltip" title="Catégorie du médicament"><?php echo e($p['nom_categorie']); ?></span>
                                         <?php else: ?>
                                             <span class="text-muted" data-bs-toggle="tooltip" title="Aucune catégorie assignée">Sans catégorie</span>
                                         <?php endif; ?>
@@ -390,7 +454,7 @@ require_once('header.php');
                 <div class="modal-dialog modal-lg">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="modalProduitTitle">Nouveau produit</h5>
+                            <h5 class="modal-title" id="modalProduitTitle">Nouveau médicament</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <form id="productForm">
@@ -398,8 +462,29 @@ require_once('header.php');
                                 <input type="hidden" id="product_id" name="product_id">
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label" data-bs-toggle="tooltip" title="Nom complet du produit">Nom du produit *</label>
-                                        <input type="text" class="form-control" id="product_name" name="product_name" required>
+                                        <label class="form-label" data-bs-toggle="tooltip" title="Nom complet du médicament">Nom du médicament *</label>
+                                        <input type="text" class="form-control" id="product_name" name="product_name" required placeholder="Ex : Paracétamol, Amoxicilline, Ibuprofène...">
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label" id="label_lot_dynamic">
+                                            Lot
+                                            <span id="lotHelp" class="ms-1 text-info" style="font-size:0.95em; cursor:pointer;" tabindex="0" data-bs-toggle="popover" data-bs-trigger="focus hover" data-bs-placement="right" title="Aide sur le lot">
+                                                <i class="material-symbols-outlined align-middle" style="font-size:1.1em;vertical-align:middle;">info</i>
+                                            </span>
+                                        </label>
+                                        <input type="text" class="form-control" id="product_lot" name="product_lot" placeholder="Généré automatiquement" readonly>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label" data-bs-toggle="tooltip" title="Dosage du médicament (ex : 500mg, 1g/5ml)">Dosage</label>
+                                        <input type="text" class="form-control" id="product_dosage" name="product_dosage" placeholder="Ex : 500mg">
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label" data-bs-toggle="tooltip" title="Date de péremption du lot">Date de péremption</label>
+                                        <input type="date" class="form-control" id="product_peremption" name="product_peremption">
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label" data-bs-toggle="tooltip" title="Conditionnement (ex : boîte de 30, flacon 100ml)">Conditionnement</label>
+                                        <input type="text" class="form-control" id="product_conditionnement" name="product_conditionnement" placeholder="Ex : boîte de 30">
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label" data-bs-toggle="tooltip" title="Code-barres pour scanner rapide en caisse">Code-barres</label>
@@ -468,7 +553,7 @@ require_once('header.php');
                                     </div>
                                     <div class="col-12 mb-3">
                                         <label class="form-label" data-bs-toggle="tooltip" title="Détails utiles pour la vente (format, couleur, etc.)">Description</label>
-                                        <textarea class="form-control" id="product_description" name="product_description" rows="3" placeholder="Ex: Savon parfumé 250g, format familial, couleur blanche avec emballage recyclable"></textarea>
+                                        <textarea class="form-control" id="product_description" name="product_description" rows="3" placeholder="Ex : Paracétamol 500mg, boîte de 16 comprimés, analgésique, usage adulte, laboratoire Sanofi"></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -515,6 +600,238 @@ require_once('header.php');
                             </div>
                         </form>
                     </div>
+                </div>
+            </div>
+            <?php
+            break;
+
+        case 'peremptions':
+            // Bloc moderne pour le suivi des péremptions avec aperçu et gestion d'erreur
+            $lots_peremption = [];
+            $peremption_error = null;
+            // Charger les catégories pour le filtre
+            $categories = db_fetch_all("SELECT * FROM categories WHERE est_actif = 1 ORDER BY nom_categorie ASC");
+            try {
+                $lots_peremption = db_fetch_all("
+                    SELECT l.numero_lot, l.date_peremption, l.quantite, p.nom_produit, p.conditionnement, c.nom_categorie
+                    FROM lots_medicaments l
+                    LEFT JOIN produits p ON l.id_produit = p.id_produit
+                    LEFT JOIN categories c ON p.id_categorie = c.id_categorie
+                    WHERE l.date_peremption IS NOT NULL AND l.date_peremption >= CURDATE()
+                    ORDER BY l.date_peremption ASC
+                    LIMIT 5
+                ");
+            } catch (Exception $e) {
+                $peremption_error = $e->getMessage();
+            }
+            ?>
+            <div class="card list-card mb-4 shadow-sm border-2 border-primary">
+                <div class="card-header bg-white d-flex align-items-center justify-content-between border-bottom border-2" style="min-height:64px;">
+                    <div class="d-flex align-items-center">
+                        <span class="material-symbols-outlined me-2 text-primary" style="font-size:2.2rem;">inventory_2</span>
+                        <h2 class="mb-0 text-primary" style="font-weight:700;letter-spacing:0.5px;">Produits</h2>
+                    </div>
+                    <span class="badge bg-primary fs-6 px-3 py-2">Gestion du stock</span>
+                </div>
+                <div class="card-body pt-3 pb-2">
+                    <div class="row mb-3 g-2 align-items-end">
+                        <div class="col-md-3">
+                            <input type="date" id="filterPeremptionDateMin" class="form-control form-control-lg" placeholder="Date min" />
+                        </div>
+                        <div class="col-md-3">
+                            <input type="date" id="filterPeremptionDateMax" class="form-control form-control-lg" placeholder="Date max" />
+                        </div>
+                        <div class="col-md-3">
+                            <select id="filterPeremptionStatut" class="form-select form-select-lg">
+                                <option value="">Tous les statuts</option>
+                                <option value="alerte_grave">Alerte grave (&lt;30j)</option>
+                                <option value="alerte">Alerte (&lt;90j)</option>
+                                <option value="plus_90">Péremption &gt; 90j</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-bordered align-middle mb-0" id="tablePeremptions">
+                            <thead class="table-light">
+                                <tr>
+                                    <th><span class="material-symbols-outlined align-middle">inventory_2</span> Produit</th>
+                                    <th>Lot</th>
+                                    <th>Date péremption</th>
+                                    <th>Quantité</th>
+                                    <th>Catégorie</th>
+                                    <th>Conditionnement</th>
+                                    <th>Statut</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (empty($lots_peremption)): ?>
+                                    <tr><td colspan="8" class="text-center text-muted">Aucune alerte, aucune information à afficher.</td></tr>
+                                <?php else: ?>
+                                    <?php foreach($lots_peremption as $lot):
+                                        // Calcul du statut
+                                        $date_peremption = strtotime($lot['date_peremption']);
+                                        $jours = ($date_peremption - strtotime(date('Y-m-d'))) / 86400;
+                                        if($jours < 0) $statut = 'expiré';
+                                        elseif($jours <= 30) $statut = 'alerte_grave';
+                                        elseif($jours <= 90) $statut = 'alerte';
+                                        else $statut = 'plus_90';
+                                        $rowClass = '';
+                                        $blink = '';
+                                        if($statut=='expiré') {$rowClass='table-danger'; $blink='blink-red';}
+                                        elseif($statut=='alerte_grave') {$rowClass='table-warning'; $blink='blink-orange';}
+                                        elseif($statut=='alerte') {$rowClass='table-info'; $blink='blink-blue';}
+                                        elseif($statut=='plus_90') {$rowClass='table-success';}
+                                    ?>
+                                    <tr class="<?php echo $rowClass; ?> <?php echo $blink; ?>" data-categorie="<?php echo e($lot['nom_categorie']??''); ?>" data-statut="<?php echo $statut; ?>" data-date="<?php echo $lot['date_peremption']; ?>">
+                                        <td><strong><?php echo e($lot['nom_produit']); ?></strong></td>
+                                        <td><?php echo e($lot['numero_lot']); ?></td>
+                                        <td><?php echo date('d/m/Y', strtotime($lot['date_peremption'])); ?></td>
+                                        <td><?php echo $lot['quantite']; ?></td>
+                                        <td><?php echo e($lot['nom_categorie'] ?? ''); ?></td>
+                                        <td><?php echo e($lot['conditionnement'] ?? ''); ?></td>
+                                        <td><span class="badge bg-secondary"><?php echo $statut; ?></span></td>
+                                        <td>
+                                            <a href="peremptions.php" class="btn btn-sm btn-outline-primary">Voir</a>
+                                            <?php
+                                            $id_produit = $lot['id_produit'] ?? null;
+                                            if (!$id_produit && !empty($lot['nom_produit'])) {
+                                                $row = db_fetch_one("SELECT id_produit FROM produits WHERE nom_produit = ? LIMIT 1", [$lot['nom_produit']]);
+                                                $id_produit = $row['id_produit'] ?? null;
+                                            }
+                                            if ($id_produit):
+                                                $motif = urlencode('Expiration lot '.$lot['numero_lot']);
+                                                $url = "mouvements_stock.php?type_mouvement=perte&id_produit={$id_produit}&quantite={$lot['quantite']}&motif={$motif}";
+                                            ?>
+                                            <a href="<?php echo $url; ?>" target="_blank" class="btn btn-sm btn-outline-danger ms-1" title="Retirer du stock (expiration)">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                    <path d="M12 9v4" />
+                                                    <path d="M12 17v.01" />
+                                                    <path d="M5.07 19h13.86a1 1 0 0 0 .87 -1.5l-6.93 -12a1 1 0 0 0 -1.74 0l-6.93 12a1 1 0 0 0 .87 1.5z" />
+                                                </svg>
+                                                Retirer du stock
+                                            </a>
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                    <!-- Filtres dynamiques supprimés (doublon) -->
+                    <?php if ($peremption_error): ?>
+                        <div class="alert alert-danger text-start mb-0">Erreur lors du chargement des lots : <?php echo e($peremption_error); ?></div>
+                    <?php else: ?>
+                    <!-- Tableau doublon supprimé -->
+                    <?php endif; ?>
+                    <style>
+                    @keyframes blinkRed {0%{background:#ffb3b3;}50%{background:#ff0000;}100%{background:#ffb3b3;}}
+                    @keyframes blinkOrange {0%{background:#ffe0b3;}50%{background:#ff9800;}100%{background:#ffe0b3;}}
+                    @keyframes blinkBlue {0%{background:#b3e0ff;}50%{background:#2196f3;}100%{background:#b3e0ff;}}
+                    .blink-red {animation: blinkRed 1s linear infinite;}
+                    .blink-orange {animation: blinkOrange 1s linear infinite;}
+                    .blink-blue {animation: blinkBlue 1s linear infinite;}
+                    </style>
+                    <script>
+                    // Filtres dynamiques pour le tableau des lots à surveiller
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const search = document.getElementById('filterPeremptionSearch');
+                        const cat = document.getElementById('filterPeremptionCategorie');
+                        const statut = document.getElementById('filterPeremptionStatut');
+                        const dateMin = document.getElementById('filterPeremptionDateMin');
+                        const dateMax = document.getElementById('filterPeremptionDateMax');
+                        const table = document.getElementById('tablePeremptions');
+                        function filterRows() {
+                            const q = (search && search.value) ? search.value.toLowerCase() : '';
+                            const c = cat ? cat.value : '';
+                            const s = statut ? statut.value : '';
+                            const dMin = dateMin && dateMin.value ? dateMin.value : '';
+                            const dMax = dateMax && dateMax.value ? dateMax.value : '';
+                            Array.from(table.tBodies[0].rows).forEach(row => {
+                                let txt = row.innerText.toLowerCase();
+                                let matchQ = !q || txt.includes(q);
+                                let matchC = !c || row.getAttribute('data-categorie') === c;
+                                let matchS = !s || row.getAttribute('data-statut') === s;
+                                let rowDate = row.getAttribute('data-date');
+                                let matchDate = true;
+                                if (dMin && rowDate) matchDate = rowDate >= dMin;
+                                if (matchDate && dMax && rowDate) matchDate = rowDate <= dMax;
+                                row.style.display = (matchQ && matchC && matchS && matchDate) ? '' : 'none';
+                            });
+                        }
+                        [search,cat,statut,dateMin,dateMax].forEach(el=>el && el.addEventListener('input', filterRows));
+                    });
+                    </script>
+                </div>
+            </div>
+            <?php
+            break;
+
+        case 'depenses':
+            // Bloc moderne pour les dépenses & comptabilité avec aperçu et gestion d'erreur
+            $depenses = [];
+            $depenses_error = null;
+            try {
+                $depenses = db_fetch_all("
+                    SELECT *
+                    FROM depenses
+                    ORDER BY date_depense DESC
+                    LIMIT 5
+                ");
+            } catch (Exception $e) {
+                $depenses_error = $e->getMessage();
+            }
+            ?>
+            <div class="card list-card mb-4">
+                <div class="card-body text-center py-5">
+                    <div style="font-size:3rem;">💸</div>
+                    <h3 class="mb-3 mt-2">Dépenses & Comptabilité</h3>
+                    <p class="text-muted mb-4">Saisissez toutes les sorties de caisse (achats, charges, salaires, etc.) pour un suivi comptable précis. Analysez la différence caisse/ventes dans le module dédié.</p>
+                    <a href="depenses.php" class="btn btn-primary btn-lg me-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                            <path d="M17 9v4a2 2 0 0 0-2 2H7a2 2 0 0 0-2-2V9" />
+                            <path d="M7 9V7a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+                            <path d="M12 17v.01" />
+                        </svg>
+                        Gérer les dépenses
+                    </a>
+                </div>
+                <div class="card-body pt-0">
+                    <h5 class="mb-3 mt-2 text-start">Dernières dépenses enregistrées</h5>
+                    <?php if ($depenses_error): ?>
+                        <div class="alert alert-danger text-start mb-0">Erreur lors du chargement des dépenses : <?php echo e($depenses_error); ?></div>
+                    <?php else: ?>
+                    <div class="table-responsive">
+                        <table class="table table-hover card-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Motif</th>
+                                    <th>Montant</th>
+                                    <th>Utilisateur</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (empty($depenses)): ?>
+                                    <tr><td colspan="4" class="text-center text-muted">Aucune dépense enregistrée</td></tr>
+                                <?php else: ?>
+                                    <?php foreach($depenses as $dep): ?>
+                                    <tr>
+                                        <td><?php echo date('d/m/Y', strtotime($dep['date_depense'])); ?></td>
+                                        <td><?php echo e($dep['motif']); ?></td>
+                                        <td><?php echo format_montant($dep['montant'], $devise); ?></td>
+                                        <td><?php echo e($dep['nom_complet']); ?></td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
             <?php
@@ -848,6 +1165,8 @@ require_once('header.php');
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <polyline points="3 6 5 6 21 6"></polyline>
                                                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                                                    <line x1="14" y1="11" x2="14" y2="17"></line>
                                                 </svg>
                                             </button>
                                         </div>
@@ -873,12 +1192,14 @@ require_once('header.php');
                             <div class="modal-body">
                                 <input type="hidden" id="category_id" name="category_id">
                                 <div class="mb-3">
-                                    <label class="form-label" data-bs-toggle="tooltip" title="Nom court et descriptif">Nom de la catégorie *</label>
-                                    <input type="text" class="form-control" id="category_name" name="category_name" required placeholder="Ex: Boissons, Épicerie, Hygiène">
+                                    <label class="form-label" data-bs-toggle="tooltip" title="Nom unique, court et explicite pour retrouver facilement vos produits. Exemple pharmaceutique : 'Antibiotiques', 'Antalgiques', 'Antiparasitaires', 'Sirops', 'Injectables', 'Parapharmacie'.">Nom de la catégorie <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="category_name" name="category_name" required maxlength="40" autocomplete="off" placeholder="Ex : Antibiotiques, Antalgiques, Sirops, Parapharmacie...">
+                                    <div class="form-text">Choisissez un nom simple et sans doublon. Exemples : "Antibiotiques", "Antalgiques", "Compléments alimentaires", "Sirops pour la toux", "Parapharmacie". Ce nom apparaîtra dans les filtres et les listes produits.</div>
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label" data-bs-toggle="tooltip" title="Description ou notes pour usage interne">Description</label>
-                                    <textarea class="form-control" id="category_description" name="category_description" rows="3" placeholder="Ex: Produits d'épicerie sèche et conserves"></textarea>
+                                    <label class="form-label" data-bs-toggle="tooltip" title="Ajoutez une description interne pour préciser l'usage, le type de médicaments ou des consignes (optionnel)">Description (optionnel)</label>
+                                    <textarea class="form-control" id="category_description" name="category_description" rows="2" maxlength="120" placeholder="Ex : Médicaments contre la douleur, antibiotiques à large spectre, produits pour nourrissons..."></textarea>
+                                    <div class="form-text">Exemple : "Antibiotiques à usage pédiatrique", "Antalgiques sans ordonnance", "Produits de soins pour bébé".</div>
                                 </div>
                             </div>
                             <div class="modal-footer">
@@ -1318,6 +1639,7 @@ require_once('header.php');
                             <div class="me-3">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#dc3545" stroke-width="2">
                                     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                    <line x1="12" y1="9" x2="12" y2="13"></line
                                     <line x1="12" y1="9" x2="12" y2="13"></line>
                                     <line x1="12" y1="17" x2="12.01" y2="17"></line>
                                 </svg>
@@ -1989,7 +2311,7 @@ function refuseIfVendeur() {
 // ===== GESTION PRODUITS =====
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM chargé, initialisation des événements...');
-    
+
     // Bouton Nouveau produit
     const btnAddProduct = document.getElementById('btnAddProduct');
     if (btnAddProduct) {
@@ -2000,7 +2322,7 @@ document.addEventListener('DOMContentLoaded', function() {
             openProductModal();
         });
     }
-    
+
     // Boutons Modifier
     document.querySelectorAll('.btn-edit-product').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -2010,7 +2332,7 @@ document.addEventListener('DOMContentLoaded', function() {
             editProduct(productData);
         });
     });
-    
+
     // Boutons Ajuster stock
     document.querySelectorAll('.btn-adjust-stock').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -2020,7 +2342,7 @@ document.addEventListener('DOMContentLoaded', function() {
             adjustStock(id, name);
         });
     });
-    
+
     // Boutons Supprimer
     document.querySelectorAll('.btn-delete-product').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -2031,7 +2353,7 @@ document.addEventListener('DOMContentLoaded', function() {
             deleteProduct(id, name);
         });
     });
-    
+
     // Formulaire produit
     const productForm = document.getElementById('productForm');
     if (productForm) {
@@ -2040,19 +2362,60 @@ document.addEventListener('DOMContentLoaded', function() {
             handleProductSubmit.call(this, e);
         });
     }
-    
+
     // Formulaire stock
     const stockForm = document.getElementById('stockForm');
     if (stockForm) {
         stockForm.addEventListener('submit', handleStockSubmit);
     }
-    
+
     // Initialiser tooltips Bootstrap
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
-    
+
+    // Initialiser popover dynamique pour l'aide du lot
+    const lotHelp = document.getElementById('lotHelp');
+    if (lotHelp) {
+        const getLotHelpContent = () => {
+            // Récupérer les valeurs du formulaire
+            const catSelect = document.getElementById('product_category');
+            const catText = catSelect ? catSelect.options[catSelect.selectedIndex]?.text || '' : '';
+            const nom = document.getElementById('product_name')?.value || '';
+            const dosage = document.getElementById('product_dosage')?.value || '';
+            const peremption = document.getElementById('product_peremption')?.value || '';
+            let msg = `<b>Numéro de lot généré automatiquement</b><br>`;
+            msg += `Format : <code>LAAAAMMJJ-XXX</code> (date + 3 chiffres aléatoires).<br>`;
+            if (catText) msg += `<b>Catégorie :</b> ${catText}<br>`;
+            if (nom) msg += `<b>Nom :</b> ${nom}<br>`;
+            if (dosage) msg += `<b>Dosage :</b> ${dosage}<br>`;
+            if (peremption) msg += `<b>Péremption :</b> ${peremption}<br>`;
+            msg += `<span class='text-muted'>Le lot permet la traçabilité du médicament, le suivi des péremptions et la gestion des retraits.</span>`;
+            return msg;
+        };
+        const popover = new bootstrap.Popover(lotHelp, {
+            html: true,
+            trigger: 'focus hover',
+            placement: 'right',
+            content: getLotHelpContent
+        });
+        // Mettre à jour dynamiquement le contenu du popover lors des changements de champs
+        ['product_category','product_name','product_dosage','product_peremption'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', () => {
+                    popover.setContent({'.popover-body': getLotHelpContent()});
+                });
+                if (el.tagName === 'SELECT') {
+                    el.addEventListener('change', () => {
+                        popover.setContent({'.popover-body': getLotHelpContent()});
+                    });
+                }
+            }
+        });
+    }
+
     console.log('Initialisation terminée');
 });
 
@@ -2060,10 +2423,19 @@ document.addEventListener('DOMContentLoaded', function() {
 function openProductModal() {
     if (refuseIfVendeur()) return;
     console.log('openProductModal() appelé');
-    document.getElementById('modalProduitTitle').textContent = 'Nouveau produit';
+    document.getElementById('modalProduitTitle').textContent = 'Nouveau médicament';
     document.getElementById('productForm').reset();
     document.getElementById('product_id').value = '';
-    
+    // Génération automatique du lot : LAAAAMMJJ-XXX
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    // On peut faire un appel AJAX pour compter les produits du jour, mais ici simple random 3 chiffres
+    const rand = Math.floor(100 + Math.random() * 900);
+    const lot = `L${y}${m}${d}-${rand}`;
+    document.getElementById('product_lot').value = lot;
+    document.getElementById('product_lot').readOnly = true;
     const modal = new bootstrap.Modal(document.getElementById('modalProduit'));
     modal.show();
     console.log('Modal affiché');
@@ -2101,25 +2473,47 @@ function adjustStock(id, name) {
 function deleteProduct(id, name) {
     if (refuseIfVendeur()) return;
     console.log('deleteProduct() appelé', id, name);
-    
     showConfirmModal({
         title: 'Confirmer la suppression',
-        message: `Êtes-vous sûr de vouloir supprimer "${name}" ?`,
+        message: `Êtes-vous sûr de vouloir supprimer "${name}" ?<br><br>Si ce produit n'a pas d'historique de vente, <b>tous les mouvements de stock et lots associés seront également supprimés</b> (action irréversible).<br>Si le produit a des ventes, il sera simplement désactivé.`,
         type: 'warning'
     }).then(confirmed => {
         if (!confirmed) return;
-        
+        // Demande de double confirmation avant suppression physique
         fetch('ajax/produits.php', {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body: new URLSearchParams({
-                action: 'delete',
-                id: id
+                action: 'delete_product',
+                id_produit: id
             })
         })
         .then(r => r.json())
         .then(data => {
-            if (data.success) {
+            if (data.success && data.message && data.message.includes('supprimé avec succès')) {
+                // Si suppression physique, demander une confirmation finale
+                showConfirmModal({
+                    title: 'Suppression définitive',
+                    message: 'Cette action va effacer définitivement tous les mouvements de stock et lots associés à ce produit. Confirmez-vous cette suppression irréversible ?',
+                    type: 'danger',
+                    confirmText: 'Oui, supprimer tout',
+                    cancelText: 'Annuler'
+                }).then(finalConfirm => {
+                    if (finalConfirm) {
+                        showAlertModal({
+                            title: 'Succès',
+                            message: data.message,
+                            type: 'success'
+                        }).then(() => location.reload());
+                    } else {
+                        showAlertModal({
+                            title: 'Annulé',
+                            message: 'Suppression annulée. Aucun mouvement ni lot n’a été supprimé.',
+                            type: 'info'
+                        });
+                    }
+                });
+            } else if (data.success) {
                 showAlertModal({
                     title: 'Succès',
                     message: data.message,
@@ -2144,51 +2538,129 @@ function deleteProduct(id, name) {
 function handleProductSubmit(e) {
     e.preventDefault();
     console.log('Soumission formulaire produit');
-    
-    const formData = new FormData(this);
+    const form = this;
     const productId = document.getElementById('product_id').value;
     const action = productId ? 'update_product' : 'add_product';
-    formData.append('action', action);
-    
-    // Pour update_product, il faut ajouter product_fournisseur
-    if (productId) {
-        formData.append('id_produit', productId);
-    }
-    
-    fetch('ajax/produits.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            bootstrap.Modal.getInstance(document.getElementById('modalProduit')).hide();
-            if (typeof showAlertModal === 'function') {
-                showAlertModal({
-                    title: 'Succès',
-                    message: data.message,
-                    type: 'success',
-                    onClose: () => location.reload()
-                });
-            } else {
-                alert(data.message);
-                location.reload();
-            }
-        } else {
-            if (typeof showAlertModal === 'function') {
-                showAlertModal({
-                    title: 'Erreur',
-                    message: data.message,
-                    type: 'error'
-                });
-            } else {
-                alert(data.message);
-            }
+
+    // Récupérer les valeurs initiales si modification
+    let recap = '';
+    if (action === 'update_product') {
+        // On récupère les anciennes valeurs depuis les attributs data-* du formulaire ou du DOM
+        const old = {
+            nom: form.product_name.getAttribute('data-old') || '',
+            categorie: form.product_category.getAttribute('data-old') || '',
+            fournisseur: form.product_fournisseur.getAttribute('data-old') || '',
+            prix_achat: form.product_purchase_price.getAttribute('data-old') || '',
+            prix_vente: form.product_sale_price.getAttribute('data-old') || '',
+            stock: form.product_stock.getAttribute('data-old') || '',
+            min_stock: form.product_min_stock.getAttribute('data-old') || '',
+            description: form.product_description.getAttribute('data-old') || '',
+            code_barre: form.product_barcode.getAttribute('data-old') || '',
+            unite: form.product_unit.getAttribute('data-old') || '',
+            dosage: form.product_dosage.getAttribute('data-old') || '',
+            conditionnement: form.product_conditionnement.getAttribute('data-old') || '',
+            peremption: form.product_peremption.getAttribute('data-old') || '',
+            depot: form.product_depot.getAttribute('data-old') || ''
+        };
+        // On construit le récapitulatif des modifications
+        recap = '<ul style="text-align:left">';
+        let modif = false;
+        if (old.nom !== form.product_name.value) {recap += `<li><b>Nom</b> : ${old.nom} → <span style='color:#206bc4'>${form.product_name.value}</span></li>`; modif = true;}
+        if (old.categorie !== form.product_category.value) {recap += `<li><b>Catégorie</b> : ${old.categorie} → <span style='color:#206bc4'>${form.product_category.value}</span></li>`; modif = true;}
+        if (old.fournisseur !== form.product_fournisseur.value) {recap += `<li><b>Fournisseur</b> : ${old.fournisseur} → <span style='color:#206bc4'>${form.product_fournisseur.value}</span></li>`; modif = true;}
+        if (old.prix_achat !== form.product_purchase_price.value) {recap += `<li><b>Prix achat</b> : ${old.prix_achat} → <span style='color:#206bc4'>${form.product_purchase_price.value}</span></li>`; modif = true;}
+        if (old.prix_vente !== form.product_sale_price.value) {recap += `<li><b>Prix vente</b> : ${old.prix_vente} → <span style='color:#206bc4'>${form.product_sale_price.value}</span></li>`; modif = true;}
+        if (old.stock !== form.product_stock.value) {recap += `<li><b>Stock</b> : ${old.stock} → <span style='color:#206bc4'>${form.product_stock.value}</span></li>`; modif = true;}
+        if (old.min_stock !== form.product_min_stock.value) {recap += `<li><b>Stock min</b> : ${old.min_stock} → <span style='color:#206bc4'>${form.product_min_stock.value}</span></li>`; modif = true;}
+        if (old.description !== form.product_description.value) {recap += `<li><b>Description</b> : ${old.description} → <span style='color:#206bc4'>${form.product_description.value}</span></li>`; modif = true;}
+        if (old.code_barre !== form.product_barcode.value) {recap += `<li><b>Code barre</b> : ${old.code_barre} → <span style='color:#206bc4'>${form.product_barcode.value}</span></li>`; modif = true;}
+        if (old.unite !== form.product_unit.value) {recap += `<li><b>Unité</b> : ${old.unite} → <span style='color:#206bc4'>${form.product_unit.value}</span></li>`; modif = true;}
+        if (old.dosage !== form.product_dosage.value) {recap += `<li><b>Dosage</b> : ${old.dosage} → <span style='color:#206bc4'>${form.product_dosage.value}</span></li>`; modif = true;}
+        if (old.conditionnement !== form.product_conditionnement.value) {recap += `<li><b>Conditionnement</b> : ${old.conditionnement} → <span style='color:#206bc4'>${form.product_conditionnement.value}</span></li>`; modif = true;}
+        if (old.peremption !== form.product_peremption.value) {recap += `<li><b>Péremption</b> : ${old.peremption} → <span style='color:#206bc4'>${form.product_peremption.value}</span></li>`; modif = true;}
+        if (old.depot !== form.product_depot.value) {recap += `<li><b>Dépôt</b> : ${old.depot} → <span style='color:#206bc4'>${form.product_depot.value}</span></li>`; modif = true;}
+        recap += '</ul>';
+        if (!modif) {
+            showAlertModal({title:'Aucune modification', message:'Aucune donnée n’a été modifiée.', type:'info'});
+            return;
         }
-    })
-    .catch(err => {
-        console.error(err);
-        alert('Erreur réseau');
+    }
+
+    // Demander confirmation avant enregistrement
+    showConfirmModal({
+        title: action === 'add_product' ? 'Confirmer l’enregistrement' : 'Confirmer la modification',
+        message: action === 'add_product' ? 'Voulez-vous enregistrer ce nouveau produit ?' : 'Voici le récapitulatif des modifications :<br>' + recap + '<br>Confirmez-vous l’enregistrement de ces changements ?',
+        type: 'info',
+        confirmText: 'Oui, enregistrer',
+        cancelText: 'Annuler'
+    }).then(confirmed => {
+        if (!confirmed) return;
+        // On force tous les champs attendus par le backend
+        const formData = new FormData();
+        formData.append('action', action);
+        if (productId) formData.append('id_produit', productId);
+        formData.append('product_name', form.product_name.value);
+        formData.append('product_category', form.product_category.value);
+        formData.append('product_fournisseur', form.product_fournisseur.value);
+        formData.append('product_purchase_price', form.product_purchase_price.value);
+        formData.append('product_sale_price', form.product_sale_price.value);
+        formData.append('product_stock', form.product_stock.value);
+        formData.append('product_min_stock', form.product_min_stock.value);
+        formData.append('product_description', form.product_description.value);
+        formData.append('product_barcode', form.product_barcode.value);
+        formData.append('product_unit', form.product_unit.value);
+        formData.append('product_dosage', form.product_dosage.value);
+        formData.append('product_conditionnement', form.product_conditionnement.value);
+        formData.append('product_peremption', form.product_peremption.value);
+        formData.append('product_depot', form.product_depot.value);
+        // Image (si ajoutée)
+        if (form.product_image && form.product_image.files.length > 0) {
+            formData.append('product_image', form.product_image.files[0]);
+        }
+        fetch('ajax/produits.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const modalEl = document.getElementById('modalProduit');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+                // Forcer le rechargement de la page après fermeture du modal pour éviter tout overlay
+                setTimeout(() => {
+                    location.reload();
+                }, 400);
+                // Toujours forcer le reload après succès, même si le modal ne s'affiche pas
+                if (typeof showAlertModal === 'function') {
+                    showAlertModal({
+                        title: 'Succès',
+                        message: data.message,
+                        type: 'success',
+                        onClose: () => location.reload()
+                    });
+                    // Sécurité : rechargement auto si l'utilisateur ne ferme pas le modal
+                    setTimeout(() => location.reload(), 2500);
+                } else {
+                    alert(data.message);
+                    location.reload();
+                }
+            } else {
+                if (typeof showAlertModal === 'function') {
+                    showAlertModal({
+                        title: 'Erreur',
+                        message: data.message,
+                        type: 'error'
+                    });
+                } else {
+                    alert(data.message);
+                }
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Erreur réseau');
+        });
     });
 }
 
@@ -2420,18 +2892,13 @@ function editCategory(category) {
 
 function deleteCategory(id, name, nbProducts) {
     if (nbProducts > 0) {
-        if (typeof showAlertModal === 'function') {
-            showAlertModal({
-                title: 'Suppression impossible',
-                message: `La catégorie "${name}" contient ${nbProducts} produit(s).`,
-                type: 'error'
-            });
-        } else {
-            alert(`Impossible : ${nbProducts} produit(s) dans cette catégorie.`);
-        }
+        showAlertModal({
+            title: 'Suppression impossible',
+            message: `La catégorie "${name}" contient ${nbProducts} produit(s) actif(s).\n\nVous devez d'abord déplacer ou supprimer ces produits avant de pouvoir supprimer la catégorie.\n\nSupprimer une catégorie efface définitivement son enregistrement, mais ne supprime pas les produits associés automatiquement.`,
+            type: 'error'
+        });
         return;
     }
-    
     const doDelete = () => {
         fetch('ajax/categories.php', {
             method: 'POST',
@@ -2439,23 +2906,18 @@ function deleteCategory(id, name, nbProducts) {
         })
         .then(r => r.json())
         .then(data => {
-            if (typeof showAlertModal === 'function') {
-                showAlertModal({
-                    title: data.success ? 'Succès' : 'Erreur',
-                    message: data.message,
-                    type: data.success ? 'success' : 'error',
-                    onClose: () => { if (data.success) location.reload(); }
-                });
-            } else {
-                alert(data.message);
-                if (data.success) location.reload();
-            }
+            showAlertModal({
+                title: data.success ? 'Succès' : 'Erreur',
+                message: data.success ? `Catégorie supprimée avec succès.\n\nAttention : les produits qui étaient associés à cette catégorie restent dans la base, mais sans catégorie.` : data.message,
+                type: data.success ? 'success' : 'error',
+                onClose: () => { if (data.success) location.reload(); }
+            });
+            if (data.success) setTimeout(() => location.reload(), 800);
         });
     };
-    
     showConfirmModal({
         title: 'Confirmer la suppression',
-        message: `Supprimer la catégorie "${name}" ?`,
+        message: `Supprimer la catégorie "${name}" ?\n\nCette action est irréversible.\n\nLes produits associés ne seront pas supprimés, mais perdront leur catégorie.`,
         type: 'warning'
     }).then(confirmed => {
         if (confirmed) doDelete();
@@ -2841,7 +3303,9 @@ function supprimerFournisseur(id, nom, nbProduits) {
 document.getElementById('formFournisseur')?.addEventListener('submit', function(e) {
     e.preventDefault();
     
-    const id = document.getElementById('fournisseur_id').value;
+    let id = document.getElementById('fournisseur_id').value;
+    if (Array.isArray(id)) id = id[0];
+    id = parseInt(id) || '';
     const formData = new URLSearchParams({
         action: id ? 'update' : 'create',
         id_fournisseur: id,
@@ -2883,7 +3347,8 @@ function ouvrirModalDepot() {
 }
 
 function modifierDepot(depot) {
-    document.getElementById('depot_id').value = depot.id_depot;
+    // Toujours forcer une chaîne numérique simple (jamais un tableau)
+    document.getElementById('depot_id').value = (depot.id_depot && !Array.isArray(depot.id_depot)) ? String(parseInt(depot.id_depot)) : '';
     document.getElementById('depot_nom').value = depot.nom_depot;
     document.getElementById('depot_description').value = depot.description || '';
     document.getElementById('depot_adresse').value = depot.adresse || '';
@@ -2935,37 +3400,7 @@ function supprimerDepot(id, nom, stockTotal) {
 }
 
 document.getElementById('formDepot')?.addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const id = document.getElementById('depot_id').value;
-    const formData = new URLSearchParams({
-        action: id ? 'update' : 'create',
-        id_depot: id,
-        nom_depot: document.getElementById('depot_nom').value,
-        description: document.getElementById('depot_description').value,
-        adresse: document.getElementById('depot_adresse').value,
-        est_principal: document.getElementById('depot_principal').checked ? '1' : '0'
-    });
-    
-    fetch('ajax/depots.php', { method: 'POST', body: formData })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                showAlertModal({
-                    title: 'Succès',
-                    message: data.message,
-                    type: 'success'
-                });
-                bootstrap.Modal.getInstance(document.getElementById('modalDepot')).hide();
-                setTimeout(() => location.reload(), 1000);
-            } else {
-                showAlertModal({
-                    title: 'Erreur',
-                    message: data.message,
-                    type: 'error'
-                });
-            }
-        });
+    // Ce bloc est remplacé par la version récapitulative plus bas (fin du fichier)
 });
 
 // Fonction de recherche en temps réel pour les produits
@@ -3043,6 +3478,60 @@ if (searchMouvementsInput) {
                 }
             });
         }
+    });
+}
+
+// Soumission formulaire dépôt avec confirmation récapitulative
+const formDepot = document.getElementById('formDepot');
+if (formDepot) {
+    formDepot.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const id = document.getElementById('depot_id').value;
+        const nom = document.getElementById('depot_nom').value;
+        const description = document.getElementById('depot_description').value;
+        const adresse = document.getElementById('depot_adresse').value;
+        const est_principal = document.getElementById('depot_principal').checked ? 'Oui' : 'Non';
+        let recap = '<ul style="text-align:left">';
+        recap += `<li><b>Nom</b> : ${nom}</li>`;
+        recap += `<li><b>Description</b> : ${description}</li>`;
+        recap += `<li><b>Adresse</b> : ${adresse}</li>`;
+        recap += `<li><b>Dépôt principal</b> : ${est_principal}</li>`;
+        recap += '</ul>';
+        showConfirmModal({
+            title: id ? 'Confirmer la modification du dépôt' : 'Confirmer la création du dépôt',
+            message: (id ? 'Voici le récapitulatif des modifications :' : 'Voici le récapitulatif du nouveau dépôt :') + '<br>' + recap + '<br>Confirmez-vous ?',
+            type: 'info',
+            confirmText: id ? 'Oui, modifier' : 'Oui, créer',
+            cancelText: 'Annuler'
+        }).then(confirmed => {
+            if (!confirmed) return;
+            const formData = new URLSearchParams({
+                action: id ? 'update' : 'create',
+                id_depot: id,
+                nom_depot: nom,
+                description: description,
+                adresse: adresse,
+                est_principal: document.getElementById('depot_principal').checked ? '1' : '0'
+            });
+            fetch('ajax/depots.php', { method: 'POST', body: formData })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlertModal({
+                            title: 'Succès',
+                            message: data.message,
+                            type: 'success'
+                        });
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showAlertModal({
+                            title: 'Erreur',
+                            message: data.message,
+                            type: 'error'
+                        });
+                    }
+                });
+        });
     });
 }
 
