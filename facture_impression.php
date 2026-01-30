@@ -5,6 +5,22 @@
  */
 require_once 'protection_pages.php';
 
+// Sécurisation : s'assurer que $config est bien défini (protection_pages.php doit le définir)
+if (!isset($config) || !is_array($config) || empty($config['nom_boutique'])) {
+    // Récupération manuelle si besoin
+    if (function_exists('get_system_config')) {
+        $config = get_system_config();
+    }
+    if (!$config || empty($config['nom_boutique'])) {
+        die('Configuration système manquante. Contactez l\'administrateur.');
+    }
+    // Couleurs par défaut si non définies
+    $couleur_primaire = $config['couleur_primaire'] ?? '#206bc4';
+    $couleur_secondaire = $config['couleur_secondaire'] ?? '#ffffff';
+    $devise = $config['devise'] ?? 'CDF';
+}
+// Sinon, les variables globales sont déjà définies par protection_pages.php
+
 $id_vente = $_GET['id'] ?? 0;
 $format = $_GET['format'] ?? 'thermal';
 if (!in_array($format, ['thermal', 'a4'], true)) {
@@ -32,10 +48,10 @@ if (!$vente) {
 // Récupérer les détails de la vente
 $details = db_fetch_all("
     SELECT 
-        vd.*,
-        p.nom_produit
+        vd.*, 
+        p.dosage, p.date_peremption, p.conditionnement
     FROM details_vente vd
-    INNER JOIN produits p ON vd.id_produit = p.id_produit
+    LEFT JOIN produits p ON vd.id_produit = p.id_produit
     WHERE vd.id_vente = ?
     ORDER BY vd.id_detail
 ", [$id_vente]);
@@ -70,15 +86,20 @@ $page_title = 'Facture ' . $vente['numero_facture'];
         .invoice-header {
             background: linear-gradient(135deg, <?php echo $couleur_primaire; ?>, <?php echo $couleur_secondaire; ?>);
             color: white;
-            padding: <?php echo $format === 'thermal' ? '16px' : '30px'; ?>;
+            padding: <?php echo $format === 'thermal' ? '10px 8px' : '30px'; ?>;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
         .invoice-body {
-            padding: <?php echo $format === 'thermal' ? '16px' : '30px'; ?>;
+            padding: <?php echo $format === 'thermal' ? '8px' : '30px'; ?>;
         }
 
         .info-block {
             margin-bottom: <?php echo $format === 'thermal' ? '12px' : '20px'; ?>;
+            font-size: <?php echo $format === 'thermal' ? '8px' : '13px'; ?>;
         }
 
         .invoice-table th {
@@ -128,21 +149,73 @@ $page_title = 'Facture ' . $vente['numero_facture'];
         }
 
         <?php if ($format === 'thermal'): ?>
+                .invoice-table th, .invoice-table td {
+                    font-size: 7px;
+                    padding: 2px 1px;
+                }
+                .invoice-table th:nth-child(1), .invoice-table td:nth-child(1) { width: 10px; }
+                .invoice-table th:nth-child(2), .invoice-table td:nth-child(2) { width: 70px; }
+                .invoice-table th:nth-child(3), .invoice-table td:nth-child(3) { width: 18px; text-align:center; }
+                .invoice-table th:nth-child(4), .invoice-table td:nth-child(4) { width: 32px; text-align:right; }
+                .invoice-table th:nth-child(5), .invoice-table td:nth-child(5) { width: 32px; text-align:right; }
         body {
             background: #fff;
         }
         .invoice-container {
             box-shadow: none;
             border: 1px dashed #ddd;
+            max-width: 210px;
+            margin: 0 auto;
+            padding: 0 2px;
         }
-        .invoice-header h1 { font-size: 18px; }
-        .invoice-header h2 { font-size: 20px; }
-        .invoice-header h4 { font-size: 16px; }
-        .invoice-body { padding-bottom: 12px; }
-        .invoice-table th:nth-child(1), .invoice-table td:nth-child(1) { width: 30px; }
-        .invoice-table th:nth-child(3), .invoice-table td:nth-child(3) { width: 80px; }
-        .invoice-table th:nth-child(4), .invoice-table td:nth-child(4) { width: 90px; }
-        .invoice-table th:nth-child(5), .invoice-table td:nth-child(5) { width: 90px; }
+        .invoice-header {
+            flex-direction: row;
+            align-items: flex-start;
+            justify-content: flex-start;
+            text-align: left;
+            gap: 6px;
+            padding: 6px 2px 4px 2px;
+        }
+        .logo-pharma { width: 28px; height: 28px; border-radius: 6px; margin: 0 4px 0 0; background: #fff; display:block; }
+        .invoice-header h1, .invoice-header h2, .invoice-header h4 {
+            text-align: left;
+            margin-bottom: 2px;
+        }
+        .invoice-body, .info-block, .invoice-header, .footer-text {
+            text-align: left !important;
+        }
+        .info-block {
+            margin-bottom: 6px;
+            font-size: 8px;
+        }
+                <?php if ($format === 'a4'): ?>
+                .logo-pharma img, .logo-pharma svg {
+                    max-width: 24px;
+                    max-height: 24px;
+                    width: 24px;
+                    height: 24px;
+                    margin: 0 auto 8px auto;
+                    display: block;
+                }
+                .logo-pharma {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    margin-bottom: 8px;
+                }
+                <?php endif; ?>
+        .invoice-header h1 { font-size: 11px; margin-bottom:2px; }
+        .invoice-header h2 { font-size: 12px; margin-bottom:2px; }
+        .invoice-header h4 { font-size: 10px; margin-bottom:2px; }
+        .invoice-body { padding-bottom: 4px; }
+        .invoice-table th, .invoice-table td { padding: 1px 0.5px; }
+        .invoice-table th { font-size: 8px; }
+        .invoice-table td { font-size: 8px; }
+        /* Suppression du tronquage pour lisibilité */
+        .total-row { font-size: 9px; background: #e7f3e7; font-weight: bold; }
+        .footer-text { font-size: 7px; padding: 3px; }
+        .invoice-table { table-layout: fixed; width: 100%; }
         <?php endif; ?>
     </style>
 </head>
@@ -150,11 +223,37 @@ $page_title = 'Facture ' . $vente['numero_facture'];
     <div class="invoice-container">
         <!-- Header -->
         <div class="invoice-header">
-            <div class="row align-items-center">
-                <div class="col-md-8">
+            <div style="display:flex;flex-direction:row;align-items:flex-start;justify-content:flex-start;text-align:left;gap:12px;">
+                    <span class="logo-pharma">
+                        <?php
+                        $logoPath = null;
+                        $tryPaths = [];
+                        if (!empty($config['logo_boutique'])) {
+                            $tryPaths[] = $config['logo_boutique'];
+                            $tryPaths[] = 'uploads/logos/' . $config['logo_boutique'];
+                            $tryPaths[] = 'images/' . $config['logo_boutique'];
+                        }
+                        $tryPaths[] = 'uploads/logos/logo.png';
+                        $tryPaths[] = 'images/logo-pharma.png';
+                        foreach ($tryPaths as $p) {
+                            if (!empty($p) && file_exists($p) && is_file($p)) {
+                                $logoPath = $p;
+                                break;
+                            }
+                        }
+                        ?>
+                        <?php if ($logoPath): ?>
+                            <img src="<?php echo htmlspecialchars($logoPath); ?>" alt="Logo pharmacie"
+                            style="object-fit:contain;<?php if ($format === 'a4') { echo 'width:48px;height:48px;'; } else { echo 'width:32px;height:32px;'; } ?>" />
+                        <?php else: ?>
+                            <!-- Fallback SVG medical_services sans background -->
+                            <svg class="material-symbols-outlined" width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M24 14v20M14 24h20" stroke="#11d411" stroke-width="4" stroke-linecap="round"/></svg>
+                        <?php endif; ?>
+                    </span>
+                <div style="text-align:center;">
                     <h1 class="mb-0"><?php echo htmlspecialchars($config['nom_boutique']); ?></h1>
-                    <p class="mb-0"><?php echo htmlspecialchars($config['adresse'] ?? ''); ?></p>
-                    <p class="mb-0">
+                    <p class="mb-0" style="font-size:11px;"><?php echo htmlspecialchars($config['adresse'] ?? ''); ?></p>
+                    <p class="mb-0" style="font-size:10px;">
                         <?php if (!empty($config['telephone'])): ?>
                         Tél: <?php echo htmlspecialchars($config['telephone']); ?>
                         <?php endif; ?>
@@ -163,11 +262,11 @@ $page_title = 'Facture ' . $vente['numero_facture'];
                         <?php endif; ?>
                     </p>
                 </div>
-                <div class="col-md-4 text-end">
-                    <h2 class="mb-0">FACTURE</h2>
-                    <h4 class="mb-0"><?php echo $vente['numero_facture']; ?></h4>
-                    <span class="badge-paid"><?php echo strtoupper($vente['statut']); ?></span>
-                </div>
+            </div>
+            <div style="text-align:right;">
+                <h2 class="mb-0">FACTURE</h2>
+                <h4 class="mb-0"><?php echo $vente['numero_facture']; ?></h4>
+                <span class="badge-paid"><?php echo strtoupper($vente['statut']); ?></span>
             </div>
         </div>
 
@@ -198,21 +297,26 @@ $page_title = 'Facture ' . $vente['numero_facture'];
             </div>
 
             <!-- Table -->
-            <table class="table table-bordered invoice-table">
+            <table class="table table-bordered invoice-table" style="margin-bottom:0;">
                 <thead>
                     <tr>
-                        <th width="50">#</th>
-                        <th>Produit</th>
-                        <th width="100" class="text-center">Quantité</th>
-                        <th width="120" class="text-end">Prix unitaire</th>
-                        <th width="120" class="text-end">Total</th>
+                        <th width="30">#</th>
+                        <th>Médicament / Dosage / Cond.</th>
+                        <th width="60" class="text-center">Qté</th>
+                        <th width="80" class="text-end">PU</th>
+                        <th width="80" class="text-end">Total</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($details as $index => $detail): ?>
                     <tr>
                         <td><?php echo $index + 1; ?></td>
-                        <td><strong><?php echo htmlspecialchars($detail['nom_produit']); ?></strong></td>
+                        <td style="word-break:break-word;white-space:normal;line-height:1.2;">
+                            <strong><?php echo htmlspecialchars($detail['nom_produit']); ?></strong>
+                            <?php if (!empty($detail['dosage']) || !empty($detail['conditionnement'])): ?>
+                                <span style="font-size:<?php echo $format === 'thermal' ? '7px' : '13px'; ?>;color:#555;"> <?php if (!empty($detail['dosage'])): ?><?php echo htmlspecialchars($detail['dosage']); ?><?php endif; ?><?php if (!empty($detail['dosage']) && !empty($detail['conditionnement'])): ?> | <?php endif; ?><?php if (!empty($detail['conditionnement'])): ?><?php echo htmlspecialchars($detail['conditionnement']); ?><?php endif; ?></span>
+                            <?php endif; ?>
+                        </td>
                         <td class="text-center"><?php echo $detail['quantite']; ?></td>
                         <td class="text-end"><?php echo number_format($detail['prix_unitaire'], 0, ',', ' '); ?> <?php echo $devise; ?></td>
                         <td class="text-end"><?php echo number_format($detail['prix_total'], 0, ',', ' '); ?> <?php echo $devise; ?></td>
@@ -221,6 +325,20 @@ $page_title = 'Facture ' . $vente['numero_facture'];
                 </tbody>
                 <tfoot>
                     <tr class="total-row">
+                        <td colspan="4" class="text-end"><strong>Total HT</strong></td>
+                        <td class="text-end"><strong><?php echo number_format($vente['montant_ht'], 0, ',', ' '); ?> <?php echo $devise; ?></strong></td>
+                    </tr>
+                    <tr class="total-row">
+                        <td colspan="4" class="text-end"><strong>TVA (16%)</strong></td>
+                        <td class="text-end"><strong><?php echo number_format($vente['montant_tva'], 0, ',', ' '); ?> <?php echo $devise; ?></strong></td>
+                    </tr>
+                    <?php if (!empty($vente['montant_remise']) && $vente['montant_remise'] > 0): ?>
+                    <tr class="total-row">
+                        <td colspan="4" class="text-end"><strong>Remise</strong></td>
+                        <td class="text-end"><strong>-<?php echo number_format($vente['montant_remise'], 0, ',', ' '); ?> <?php echo $devise; ?></strong></td>
+                    </tr>
+                    <?php endif; ?>
+                    <tr class="total-row" style="background:<?php echo $couleur_primaire; ?>22;">
                         <td colspan="4" class="text-end"><strong>TOTAL À PAYER</strong></td>
                         <td class="text-end"><strong><?php echo number_format($vente['montant_total'], 0, ',', ' '); ?> <?php echo $devise; ?></strong></td>
                     </tr>
