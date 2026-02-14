@@ -99,10 +99,11 @@ require_once('header.php');
     // Données chargées depuis la BD
     let mouvementsCaisse = [];
     let statsGlobales = {};
+    
     function afficherCaisse(data) {
         const tbody = document.getElementById('caisseTbody');
         if (!data.length) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-muted">Aucune opération trouvée.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Aucune opération trouvée.</td></tr>';
             return;
         }
         tbody.innerHTML = data.map(m => `
@@ -116,6 +117,7 @@ require_once('header.php');
             </tr>
         `).join('');
     }
+    
     function majDashboardCaisse(stats) {
         document.getElementById('soldeCaisse').textContent = (stats.solde_actuel || 0).toLocaleString('fr-FR', {minimumFractionDigits:2}) + ' <?php echo $devise; ?>';
         document.getElementById('entreesPeriode').textContent = (stats.entrees || 0).toLocaleString('fr-FR', {minimumFractionDigits:2}) + ' <?php echo $devise; ?>';
@@ -129,7 +131,26 @@ require_once('header.php');
         let cat = document.getElementById('categorieCaisse').value;
         
         const params = new URLSearchParams();
-    document.getElementById('btnFiltrer').addEventListener('click', chargerDonnees
+        if (d1) params.append('date_debut', d1);
+        if (d2) params.append('date_fin', d2);
+        if (cat) params.append('categorie', cat);
+        
+        const tbody = document.getElementById('caisseTbody');
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center"><div class="spinner-border spinner-border-sm me-2"></div>Chargement...</td></tr>';
+        
+        fetch('ajax/get_rapport_caisse.php?' + params.toString())
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    mouvementsCaisse = data.data;
+                    statsGlobales = data.stats;
+                    afficherCaisse(data.data);
+                    majDashboardCaisse(data.stats);
+                    
+                    let periode = '';
+                    if (d1 && d2) periode = 'Du '+d1+' au '+d2;
+                    else if (d1) periode = 'Depuis '+d1;
+                    else if (d2) periode = 'Jusqu\'au '+d2;
                     else periode = 'Toutes dates';
                     document.getElementById('periodeAffichee').textContent = periode;
                 } else {
@@ -140,49 +161,11 @@ require_once('header.php');
                 tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Erreur de chargement</td></tr>';
             });
     }
-    function filtrerCaisse() {
-        let d1 = document.getElementById('dateDebut').value;
-        let d2 = document.getElementById('dateFin').value;
-        let cat = document.getElementById('categorieCaisse').value;
-        let res = mouvementsCaisse.filter(m => {
-            let ok = true;
-            if (d1 && m.date < d1) ok = false;
-            if (d2 && m.date > d2) ok = false;
-            if (cat && m.categorie !== cat) ok = false;
-            return ok;
-        });
-        afficherCaisse(res);
-        majDashboardCaisse(res);
-        let periode = '';
-        if (d1 && d2) periode = 'Du '+d1+' au '+d2;
-        else if (d1) periode = 'Depuis '+d1;
-        else if (d2) periode = 'Jusqu\'au '+d2;
-        else periode = 'Toutes dates';
-        document.getElementById('periodeAffichee').textContent = periode;
-    }
-    document.getElementById('btnFiltrer').addEventListener('click', filtrerCaisse);
+    
+    document.getElementById('btnFiltrer').addEventListener('click', chargerDonneesCaisse);
+    
     // Export CSV
     document.getElementById('btnExportCaisse').addEventListener('click', function() {
-        let data = mouvementsCaisse;
-        let d1 = document.getElementById('dateDebut').value;
-        let d2 = document.getElementById('dateFin').value;
-        let cat = document.getElementById('categorieCaisse').value;
-        if (d1 || d2 || cat) {
-            data = mouvementsCaisse.filter(m => {
-                let ok = true;
-                if (d1 && m.date < d1) ok = false;
-                if (d2 && m.date > d2) ok = false;
-                if (cat && m.categorie !== cat) ok = false;
-                return ok;
-            });
-        }
-        if (!data.length) return showAlertModal({title:'Aucune donnée', message:'Aucune opération à exporter.', type:'info'});
-        let csv = 'Date;Libellé;Montant;Type;Catégorie;Description\n';
-        data.forEach(m => {
-            csv += `${m.date};${m.libelle};${m.montant};${m.type};${m.categorie};${m.description||''}\n`;
-        });
-        const blob = new Blob([csv], {type:'text/csv'});
-        const url = URL.createObjectURL(blob);
         if (!mouvementsCaisse.length) {
             alert('Aucune donnée à exporter');
             return;
@@ -207,4 +190,7 @@ require_once('header.php');
     document.getElementById('dateFin').value = '<?php echo date('Y-m-d'); ?>';
     
     // Charger les données au démarrage
-    chargerDonneesCaisse(
+    chargerDonneesCaisse();
+    </script>
+</div>
+<?php require_once('footer.php'); ?>
