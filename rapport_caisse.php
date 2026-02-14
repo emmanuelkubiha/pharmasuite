@@ -96,15 +96,9 @@ require_once('header.php');
         </div>
     </div>
     <script>
-    // MOCK DATA - à remplacer par AJAX réel
-    let mouvementsCaisse = [
-        {date:'2026-01-23', libelle:'Vente médicaments', montant:50000, type:'Entrée', categorie:'Vente', description:'Vente du jour'},
-        {date:'2026-01-23', libelle:'Achat stock', montant:-15000, type:'Dépense', categorie:'Achat stock', description:'Achat grossiste'},
-        {date:'2026-01-22', libelle:'Frais électricité', montant:-3000, type:'Dépense', categorie:'Frais', description:'Facture SNEL'},
-        {date:'2026-01-22', libelle:'Salaire agent', montant:-8000, type:'Dépense', categorie:'Salaire', description:'Janvier'},
-        {date:'2026-01-21', libelle:'Vente médicaments', montant:40000, type:'Entrée', categorie:'Vente', description:'Vente du jour'},
-        {date:'2026-01-21', libelle:'Transfert banque', montant:20000, type:'Entrée', categorie:'Transfert', description:'Versement banque'},
-    ];
+    // Données chargées depuis la BD
+    let mouvementsCaisse = [];
+    let statsGlobales = {};
     function afficherCaisse(data) {
         const tbody = document.getElementById('caisseTbody');
         if (!data.length) {
@@ -122,18 +116,29 @@ require_once('header.php');
             </tr>
         `).join('');
     }
-    function majDashboardCaisse(data) {
-        let solde = 0, entrees = 0, depenses = 0, nb = 0;
-        data.forEach(m => {
-            solde += m.montant;
-            if (m.montant > 0) entrees += m.montant;
-            if (m.montant < 0) depenses += Math.abs(m.montant);
-            nb++;
-        });
-        document.getElementById('soldeCaisse').textContent = solde.toLocaleString('fr-FR', {minimumFractionDigits:2}) + ' <?php echo $devise; ?>';
-        document.getElementById('entreesPeriode').textContent = entrees.toLocaleString('fr-FR', {minimumFractionDigits:2}) + ' <?php echo $devise; ?>';
-        document.getElementById('depensesPeriode').textContent = depenses.toLocaleString('fr-FR', {minimumFractionDigits:2}) + ' <?php echo $devise; ?>';
-        document.getElementById('nbOperations').textContent = nb;
+    function majDashboardCaisse(stats) {
+        document.getElementById('soldeCaisse').textContent = (stats.solde_actuel || 0).toLocaleString('fr-FR', {minimumFractionDigits:2}) + ' <?php echo $devise; ?>';
+        document.getElementById('entreesPeriode').textContent = (stats.entrees || 0).toLocaleString('fr-FR', {minimumFractionDigits:2}) + ' <?php echo $devise; ?>';
+        document.getElementById('depensesPeriode').textContent = (stats.depenses || 0).toLocaleString('fr-FR', {minimumFractionDigits:2}) + ' <?php echo $devise; ?>';
+        document.getElementById('nbOperations').textContent = stats.nb_operations || 0;
+    }
+    
+    function chargerDonneesCaisse() {
+        let d1 = document.getElementById('dateDebut').value;
+        let d2 = document.getElementById('dateFin').value;
+        let cat = document.getElementById('categorieCaisse').value;
+        
+        const params = new URLSearchParams();
+    document.getElementById('btnFiltrer').addEventListener('click', chargerDonnees
+                    else periode = 'Toutes dates';
+                    document.getElementById('periodeAffichee').textContent = periode;
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">'+data.message+'</td></tr>';
+                }
+            })
+            .catch(error => {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Erreur de chargement</td></tr>';
+            });
     }
     function filtrerCaisse() {
         let d1 = document.getElementById('dateDebut').value;
@@ -178,6 +183,16 @@ require_once('header.php');
         });
         const blob = new Blob([csv], {type:'text/csv'});
         const url = URL.createObjectURL(blob);
+        if (!mouvementsCaisse.length) {
+            alert('Aucune donnée à exporter');
+            return;
+        }
+        let csv = '\uFEFFDate;Libellé;Montant;Type;Catégorie;Description\n';
+        mouvementsCaisse.forEach(m => {
+            csv += `${m.date};${m.libelle};${m.montant};${m.type};${m.categorie};${m.description||''}\n`;
+        });
+        const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = 'rapport_caisse_<?php echo date('Ymd_His'); ?>.csv';
@@ -186,9 +201,10 @@ require_once('header.php');
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     });
-    // Init
-    afficherCaisse(mouvementsCaisse);
-    majDashboardCaisse(mouvementsCaisse);
-    </script>
-</div>
-<?php require_once('footer.php'); ?>
+    
+    // Initialiser les dates par défaut
+    document.getElementById('dateDebut').value = '<?php echo date('Y-m-01'); ?>';
+    document.getElementById('dateFin').value = '<?php echo date('Y-m-d'); ?>';
+    
+    // Charger les données au démarrage
+    chargerDonneesCaisse(
