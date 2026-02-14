@@ -18,9 +18,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $devise = trim($_POST['devise'] ?? '');
         $couleur_primaire = trim($_POST['couleur_primaire'] ?? '');
         $couleur_secondaire = trim($_POST['couleur_secondaire'] ?? '');
-        $adresse = trim($_POST['adresse_boutique'] ?? '');
-        $telephone = trim($_POST['telephone_boutique'] ?? '');
-        $email = trim($_POST['email_boutique'] ?? '');
+        $adresse = trim($_POST['adresse'] ?? '');
+        $telephone = trim($_POST['telephone'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $num_registre_commerce = trim($_POST['num_registre_commerce'] ?? '');
+        $num_impot = trim($_POST['num_impot'] ?? '');
         
         if (empty($nom_boutique)) {
             throw new Exception('Le nom de la boutique est obligatoire');
@@ -64,7 +66,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 adresse = ?,
                 telephone = ?,
                 email = ?,
-                logo = ?
+                num_registre_commerce = ?,
+                num_impot = ?,
+                logo = ?,
+                date_modification = NOW()
                 WHERE id_config = 1";
         
         db_execute($sql, [
@@ -75,6 +80,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $adresse,
             $telephone,
             $email,
+            $num_registre_commerce,
+            $num_impot,
             $logo
         ]);
         
@@ -109,6 +116,42 @@ include 'header.php';
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css"/>
 
 <style>
+/* Styles pour les tabs */
+.params-nav {
+    background: #f8f9fa;
+    padding: 0.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.params-nav .nav-link {
+    color: #6c757d;
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.params-nav .nav-link:hover {
+    background: <?php echo $couleur_primaire; ?>15;
+    color: <?php echo $couleur_primaire; ?>;
+}
+
+.params-nav .nav-link.active {
+    background: linear-gradient(135deg, <?php echo $couleur_primaire; ?>, <?php echo $couleur_secondaire; ?>);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.params-nav .nav-link .icon {
+    width: 18px;
+    height: 18px;
+}
+
 /* Styles pour le crop d'image */
 #cropModal {
     display: none;
@@ -215,95 +258,128 @@ include 'header.php';
     </div>
     <?php endif; ?>
 
-    <div class="row">
-        <div class="col-lg-4">
-            <div class="card mb-4 shadow-sm">
-                <div class="card-header" style="background: linear-gradient(135deg, <?php echo $couleur_primaire; ?>, <?php echo $couleur_secondaire; ?>); color: white;">
-                    <h3 class="card-title mb-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><line x1="4" y1="19" x2="20" y2="19"/><polyline points="4 15 8 9 12 11 16 6 20 10"/></svg>
-                        Statistiques du système
-                    </h3>
-                </div>
-                <div class="list-group list-group-flush">
-                    <div class="list-group-item">
-                        <div class="row align-items-center">
-                            <div class="col-auto">
-                                <span class="avatar avatar-lg" style="background: linear-gradient(135deg, <?php echo $couleur_primaire; ?>, <?php echo $couleur_secondaire; ?>); color: white;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5"/><path d="M12 12l8 -4.5"/><path d="M12 12l0 9"/><path d="M12 12l-8 -4.5"/></svg>
-                                </span>
-                            </div>
-                            <div class="col">
-                                <div class="text-muted small text-uppercase">Produits actifs</div>
-                                <strong class="fs-2" style="color: <?php echo $couleur_primaire; ?>;"><?php echo number_format($stats_systeme['nb_produits']); ?></strong>
-                            </div>
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-pills params-nav" id="paramsTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="config-tab" data-bs-toggle="pill" data-bs-target="#configTab" type="button" role="tab" aria-controls="configTab" aria-selected="true">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+                Configuration
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="reinit-tab" data-bs-toggle="pill" data-bs-target="#reinitTab" type="button" role="tab" aria-controls="reinitTab" aria-selected="false">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                Réinitialisations
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="import-tab" data-bs-toggle="pill" data-bs-target="#importTab" type="button" role="tab" aria-controls="importTab" aria-selected="false">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"/><polyline points="7 9 12 4 17 9"/><line x1="12" y1="4" x2="12" y2="16"/></svg>
+                Import / Export
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="logs-tab" data-bs-toggle="pill" data-bs-target="#logsTab" type="button" role="tab" aria-controls="logsTab" aria-selected="false">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/><line x1="9" y1="12" x2="9.01" y2="12"/><line x1="13" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="9.01" y2="16"/><line x1="13" y1="16" x2="15" y2="16"/></svg>
+                Logs d'Activités
+            </button>
+        </li>
+    </ul>
+
+    <!-- Statistiques en cartes modernes -->
+    <div class="row mb-4">
+        <div class="col-md-4 col-xl mb-3">
+            <div class="card card-sm" style="border-left: 4px solid <?php echo $couleur_primaire; ?>;">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="avatar" style="background: <?php echo $couleur_primaire; ?>20; color: <?php echo $couleur_primaire; ?>;">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5"/><path d="M12 12l8 -4.5"/><path d="M12 12l0 9"/><path d="M12 12l-8 -4.5"/></svg>
+                            </span>
                         </div>
-                    </div>
-                    <div class="list-group-item">
-                        <div class="row align-items-center">
-                            <div class="col-auto">
-                                <span class="avatar avatar-lg bg-success-lt">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon text-success" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0 -3 -3.85"/></svg>
-                                </span>
-                            </div>
-                            <div class="col">
-                                <div class="text-muted small text-uppercase">Clients</div>
-                                <strong class="fs-2 text-success"><?php echo number_format($stats_systeme['nb_clients']); ?></strong>
-                            </div>
+                        <div class="col">
+                            <div class="font-weight-medium"><?php echo number_format($stats_systeme['nb_produits']); ?></div>
+                            <div class="text-muted small">Produits actifs</div>
                         </div>
-                    </div>
-                    <div class="list-group-item">
-                        <div class="row align-items-center">
-                            <div class="col-auto">
-                                <span class="avatar avatar-lg bg-info-lt">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon text-info" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="6" cy="19" r="2"/><circle cx="17" cy="19" r="2"/><path d="M17 17h-11v-14h-2"/><path d="M6 5l14 1l-1 7h-13"/></svg>
-                                </span>
-                            </div>
-                            <div class="col">
-                                <div class="text-muted small text-uppercase">Ventes totales</div>
-                                <strong class="fs-2 text-info"><?php echo number_format($stats_systeme['nb_ventes']); ?></strong>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="list-group-item">
-                        <div class="row align-items-center">
-                            <div class="col-auto">
-                                <span class="avatar avatar-lg bg-warning-lt">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon text-warning" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
-                                </span>
-                            </div>
-                            <div class="col">
-                                <div class="text-muted small text-uppercase">Stock total</div>
-                                <strong class="fs-2 text-warning"><?php echo number_format($stats_systeme['stock_total']); ?></strong>
-                                <small class="text-muted d-block">unités</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="list-group-item">
-                        <div class="row align-items-center">
-                            <div class="col-auto">
-                                <span class="avatar avatar-lg bg-primary-lt">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon text-primary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/><line x1="19" y1="7" x2="19" y2="10"/><line x1="19" y1="14" x2="19" y2="14.01"/></svg>
-                                </span>
-                            </div>
-                            <div class="col">
-                                <div class="text-muted small text-uppercase">Utilisateurs</div>
-                                <strong class="fs-2 text-primary"><?php echo number_format($stats_systeme['nb_utilisateurs']); ?></strong>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-footer bg-light">
-                    <div class="text-center">
-                        <small class="text-muted">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
-                            Dernière mise à jour : <?php echo date('d/m/Y H:i'); ?>
-                        </small>
                     </div>
                 </div>
             </div>
         </div>
+        <div class="col-md-4 col-xl mb-3">
+            <div class="card card-sm" style="border-left: 4px solid <?php echo $couleur_secondaire; ?>;">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="avatar" style="background: <?php echo $couleur_secondaire; ?>20; color: <?php echo $couleur_secondaire; ?>;">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0 -3 -3.85"/></svg>
+                            </span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium"><?php echo number_format($stats_systeme['nb_clients']); ?></div>
+                            <div class="text-muted small">Clients</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 col-xl mb-3">
+            <div class="card card-sm" style="border-left: 4px solid <?php echo $couleur_primaire; ?>;">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="avatar" style="background: <?php echo $couleur_primaire; ?>20; color: <?php echo $couleur_primaire; ?>;">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="6" cy="19" r="2"/><circle cx="17" cy="19" r="2"/><path d="M17 17h-11v-14h-2"/><path d="M6 5l14 1l-1 7h-13"/></svg>
+                            </span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium"><?php echo number_format($stats_systeme['nb_ventes']); ?></div>
+                            <div class="text-muted small">Ventes totales</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 col-xl mb-3">
+            <div class="card card-sm" style="border-left: 4px solid <?php echo $couleur_secondaire; ?>;">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="avatar" style="background: <?php echo $couleur_secondaire; ?>20; color: <?php echo $couleur_secondaire; ?>;">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+                            </span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium"><?php echo number_format($stats_systeme['stock_total']); ?></div>
+                            <div class="text-muted small">Stock total</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 col-xl mb-3">
+            <div class="card card-sm" style="border-left: 4px solid <?php echo $couleur_primaire; ?>;">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span class="avatar" style="background: <?php echo $couleur_primaire; ?>20; color: <?php echo $couleur_primaire; ?>;">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/><line x1="19" y1="7" x2="19" y2="10"/><line x1="19" y1="14" x2="19" y2="14.01"/></svg>
+                            </span>
+                        </div>
+                        <div class="col">
+                            <div class="font-weight-medium"><?php echo number_format($stats_systeme['nb_utilisateurs']); ?></div>
+                            <div class="text-muted small">Utilisateurs</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        <div class="col-lg-8">
+    <!-- Tab Content -->
+    <div class="tab-content" id="paramsTabContent">
+        <!-- TAB CONFIGURATION -->
+        <div class="tab-pane fade show active" id="configTab" role="tabpanel" aria-labelledby="config-tab">
+        <div class="col-lg-12">
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">Configuration de la boutique</h3>
@@ -343,7 +419,7 @@ include 'header.php';
                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="14" height="14" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12.01" y2="8"/><polyline points="11 12 12 12 12 16 13 16"/></svg>
                                 </span>
                             </label>
-                            <input type="text" class="form-control" name="adresse_boutique" value="<?php echo isset($config['adresse_boutique']) ? e($config['adresse_boutique']) : ''; ?>" placeholder="Ex: 123 Avenue Lumumba, Kinshasa">
+                            <input type="text" class="form-control" name="adresse" value="<?php echo isset($config['adresse']) ? e($config['adresse']) : ''; ?>" placeholder="Ex: 123 Avenue Lumumba, Kinshasa">
                         </div>
                         
                         <div class="row">
@@ -354,7 +430,7 @@ include 'header.php';
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="14" height="14" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12.01" y2="8"/><polyline points="11 12 12 12 12 16 13 16"/></svg>
                                     </span>
                                 </label>
-                                <input type="tel" class="form-control" name="telephone_boutique" value="<?php echo isset($config['telephone_boutique']) ? e($config['telephone_boutique']) : ''; ?>" placeholder="+243 XXX XXX XXX">
+                                <input type="tel" class="form-control" name="telephone" value="<?php echo isset($config['telephone']) ? e($config['telephone']) : ''; ?>" placeholder="+243 XXX XXX XXX">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">
@@ -363,7 +439,28 @@ include 'header.php';
                                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="14" height="14" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12.01" y2="8"/><polyline points="11 12 12 12 12 16 13 16"/></svg>
                                     </span>
                                 </label>
-                                <input type="email" class="form-control" name="email_boutique" value="<?php echo isset($config['email_boutique']) ? e($config['email_boutique']) : ''; ?>" placeholder="contact@boutique.com">
+                                <input type="email" class="form-control" name="email" value="<?php echo isset($config['email']) ? e($config['email']) : ''; ?>" placeholder="contact@boutique.com">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    Numéro RCCM (Registre de Commerce)
+                                    <span class="text-muted ms-1" data-bs-toggle="tooltip" title="Numéro d'immatriculation au registre de commerce">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="14" height="14" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12.01" y2="8"/><polyline points="11 12 12 12 12 16 13 16"/></svg>
+                                    </span>
+                                </label>
+                                <input type="text" class="form-control" name="num_registre_commerce" value="<?php echo isset($config['num_registre_commerce']) ? e($config['num_registre_commerce']) : ''; ?>" placeholder="Ex: CD/KNG/RCCM/XX-X-XXXX">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    Numéro d'impôt
+                                    <span class="text-muted ms-1" data-bs-toggle="tooltip" title="Numéro d'identification fiscale">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="14" height="14" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12.01" y2="8"/><polyline points="11 12 12 12 12 16 13 16"/></svg>
+                                    </span>
+                                </label>
+                                <input type="text" class="form-control" name="num_impot" value="<?php echo isset($config['num_impot']) ? e($config['num_impot']) : ''; ?>" placeholder="Ex: A1234567X">
                             </div>
                         </div>
 
@@ -471,8 +568,11 @@ include 'header.php';
                 </div>
             </div>
         </div>
+        </div>
+        <!-- FIN TAB CONFIGURATION -->
 
-        <!-- Section Réinitialisations -->
+        <!-- TAB RÉINITIALISATIONS -->
+        <div class="tab-pane fade" id="reinitTab" role="tabpanel" aria-labelledby="reinit-tab">
         <div class="row mt-5">
             <div class="col-12">
                 <div class="card border-danger shadow-lg">
@@ -656,8 +756,11 @@ include 'header.php';
                 </div>
             </div>
         </div>
+        </div>
+        <!-- FIN TAB RÉINITIALISATIONS -->
 
-        <!-- Section Import/Export de Données -->
+        <!-- TAB IMPORT/EXPORT -->
+        <div class="tab-pane fade" id="importTab" role="tabpanel" aria-labelledby="import-tab">
         <div class="row mt-5">
             <div class="col-12">
                 <div class="card border-primary shadow-lg">
@@ -683,7 +786,7 @@ include 'header.php';
                                     <polyline points="11 12 12 12 12 16 13 16"/>
                                 </svg>
                                 <div>
-                                    <strong>📊 Gestion des données facilitée</strong><br>
+                                    <strong>Gestion des données facilitée</strong><br>
                                     <small>Importez vos données depuis un fichier Excel ou exportez vos données vers Excel pour analyse ou sauvegarde.</small>
                                 </div>
                             </div>
@@ -865,6 +968,209 @@ include 'header.php';
                 </div>
             </div>
         </div>
+        </div>
+        <!-- FIN TAB IMPORT/EXPORT -->
+
+        <!-- TAB LOGS -->
+        <div class="tab-pane fade" id="logsTab" role="tabpanel" aria-labelledby="logs-tab">
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="card border-info shadow-lg">
+                    <div class="card-header border-info bg-gradient" style="background: linear-gradient(135deg, #0dcaf0, #0a58ca);">
+                        <h3 class="card-title mb-0 text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="28" height="28" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                <path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" />
+                                <rect x="9" y="3" width="6" height="4" rx="2" />
+                                <line x1="9" y1="12" x2="9.01" y2="12" />
+                                <line x1="13" y1="12" x2="15" y2="12" />
+                                <line x1="9" y1="16" x2="9.01" y2="16" />
+                                <line x1="13" y1="16" x2="15" y2="16" />
+                            </svg>
+                            Logs d'Activités du Système
+                        </h3>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="alert alert-info border-0 rounded-lg mb-4">
+                            <div class="d-flex align-items-start">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-3 mt-1 flex-shrink-0" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                    <circle cx="12" cy="12" r="9"/>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"/>
+                                    <polyline points="11 12 12 12 12 16 13 16"/>
+                                </svg>
+                                <div>
+                                    <strong>Historique complet des actions</strong><br>
+                                    <small>Consultez toutes les activités des utilisateurs : connexions, ventes, modifications, suppressions, etc.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Filtres -->
+                        <div class="card border-light mb-4">
+                            <div class="card-body bg-light">
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-bold">Type d'action</label>
+                                        <select class="form-select" id="typeActionFilter">
+                                            <option value="">Toutes les actions</option>
+                                            <option value="CONNEXION">🔑 Connexion</option>
+                                            <option value="DECONNEXION">🚪 Déconnexion</option>
+                                            <option value="VENTE">💰 Vente</option>
+                                            <option value="VENTE_ANNULEE">❌ Vente annulée</option>
+                                            <option value="VENTE_SUPPRIMEE">🗑️ Vente supprimée</option>
+                                            <option value="PRODUIT_AJOUT">➕ Ajout produit</option>
+                                            <option value="PRODUIT_MODIFICATION">✏️ Modification produit</option>
+                                            <option value="PRODUIT_SUPPRESSION">🗑️ Suppression produit</option>
+                                            <option value="CONFIGURATION_INITIALE">⚙️ Configuration initiale</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-bold">Utilisateur</label>
+                                        <select class="form-select" id="utilisateurFilter">
+                                            <option value="">Tous les utilisateurs</option>
+                                            <?php
+                                            $users = db_fetch_all("SELECT id_utilisateur, nom_complet FROM utilisateurs WHERE est_actif = 1 ORDER BY nom_complet");
+                                            foreach ($users as $u) {
+                                                echo "<option value=\"{$u['id_utilisateur']}\">" . e($u['nom_complet']) . "</option>";
+                                            }
+                                            ?>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label fw-bold">Date début</label>
+                                        <input type="date" class="form-control" id="dateDebutLogs" value="<?php echo date('Y-m-01'); ?>">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label fw-bold">Date fin</label>
+                                        <input type="date" class="form-control" id="dateFinLogs" value="<?php echo date('Y-m-d'); ?>">
+                                    </div>
+                                    <div class="col-md-2 d-flex align-items-end">
+                                        <button type="button" class="btn btn-primary w-100" onclick="chargerLogs(1)">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                <circle cx="10" cy="10" r="7" />
+                                                <line x1="21" y1="21" x2="15" y2="15" />
+                                            </svg>
+                                            Filtrer
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Légende explicative -->
+                        <div class="card border-warning mb-4">
+                            <div class="card-header bg-warning-lt">
+                                <h5 class="card-title mb-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2 text-warning" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                        <circle cx="12" cy="12" r="9"/>
+                                        <line x1="12" y1="8" x2="12" y2="12"/>
+                                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                                    </svg>
+                                    Comprendre les colonnes des logs
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <ul class="list-unstyled mb-0">
+                                            <li class="mb-2">
+                                                <strong>Date & Heure :</strong> 
+                                                <small class="text-muted">Moment exact de l'action (format : JJ/MM/AAAA HH:MM)</small>
+                                            </li>
+                                            <li class="mb-2">
+                                                <strong>Utilisateur :</strong> 
+                                                <small class="text-muted">Nom de l'utilisateur qui a effectué l'action</small>
+                                            </li>
+                                            <li class="mb-2">
+                                                <strong>Type d'action :</strong> 
+                                                <small class="text-muted">Catégorie de l'action (Vente, Connexion, Modification, etc.)</small>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <ul class="list-unstyled mb-0">
+                                            <li class="mb-2">
+                                                <strong>Description :</strong> 
+                                                <small class="text-muted">Détails complets de l'action effectuée</small>
+                                            </li>
+                                            <li class="mb-2">
+                                                <strong>Adresse IP :</strong> 
+                                                <small class="text-muted">Adresse IP de l'ordinateur utilisé</small>
+                                            </li>
+                                            <li class="mb-2">
+                                                <strong>Navigateur :</strong> 
+                                                <small class="text-muted">Type de navigateur et système d'exploitation</small>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tableau des logs -->
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped align-middle" id="tableLogs">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th style="width: 140px;">Date & Heure</th>
+                                        <th style="width: 150px;">Utilisateur</th>
+                                        <th style="width: 150px;">Type</th>
+                                        <th>Description</th>
+                                        <th style="width: 120px;">IP</th>
+                                        <th style="width: 80px;">Navigateur</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="logsTableBody">
+                                    <tr>
+                                        <td colspan="6" class="text-center py-5">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Chargement...</span>
+                                            </div>
+                                            <p class="mt-2 text-muted">Chargement des logs...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <nav aria-label="Navigation des logs" id="paginationLogs" class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                <!-- Pagination générée dynamiquement -->
+                            </ul>
+                        </nav>
+
+                        <!-- Actions rapides -->
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <div>
+                                <span class="badge bg-secondary" id="totalLogs">Total : 0 logs</span>
+                            </div>
+                            <div>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="purgerVieuxLogs()">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                        <line x1="4" y1="7" x2="20" y2="7" />
+                                        <line x1="10" y1="11" x2="10" y2="17" />
+                                        <line x1="14" y1="11" x2="14" y2="17" />
+                                        <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+                                        <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
+                                    </svg>
+                                    Purger logs > 90 jours
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+        <!-- FIN TAB LOGS -->
+
+    </div>
+    <!-- FIN DE TAB-CONTENT -->
     </div>
 </div>
 
@@ -890,6 +1196,7 @@ include 'header.php';
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+<script src="assets/js/parametres.js"></script>
 <script>
 let cropper = null;
 let currentImageFile = null;
@@ -1222,7 +1529,289 @@ function exporterPDF() {
     window.open(url, '_blank');
 }
 
+// ============================================
+// GESTION DES LOGS D'ACTIVITÉS
+// ============================================
+let currentLogsPage = 1;
 
+// Charger les logs depuis le serveur
+function chargerLogs(page = 1) {
+    const typeAction = document.getElementById('typeActionFilter').value;
+    const utilisateur = document.getElementById('utilisateurFilter').value;
+    const dateDebut = document.getElementById('dateDebutLogs').value;
+    const dateFin = document.getElementById('dateFinLogs').value;
+    
+    // Afficher un spinner de chargement
+    const tableBody = document.getElementById('logsTableBody');
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="6" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Chargement...</span>
+                </div>
+                <p class="mt-2 text-muted">Récupération des logs...</p>
+            </td>
+        </tr>
+    `;
+    
+    // Construire l'URL avec les paramètres
+    const params = new URLSearchParams({
+        page: page,
+        type_action: typeAction,
+        id_utilisateur: utilisateur,
+        date_debut: dateDebut,
+        date_fin: dateFin
+    });
+    
+    // Faire la requête
+    fetch(`ajax/get_logs.php?${params.toString()}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                currentLogsPage = page;
+                renderLogs(data.logs);
+                renderPagination(data.total, data.limit, data.page, data.total_pages);
+                
+                // Mettre à jour le compteur total
+                document.getElementById('totalLogs').textContent = `${data.total} log(s)`;
+                
+                // Message de succès discret
+                if (data.logs.length === 0) {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                                    <p class="mt-2">Aucun log trouvé pour ces critères</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }
+            } else {
+                showAlertModal({
+                    title: 'Erreur',
+                    message: data.message,
+                    type: 'error'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            showAlertModal({
+                title: 'Erreur',
+                message: 'Impossible de récupérer les logs',
+                type: 'error'
+            });
+        });
+}
+
+// Afficher les logs dans le tableau
+function renderLogs(logs) {
+    const tableBody = document.getElementById('logsTableBody');
+    
+    if (logs.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-5 text-muted">
+                    <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                    <p class="mt-2">Aucun log trouvé</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    const html = logs.map(log => `
+        <tr>
+            <td class="align-middle">
+                <small class="text-muted">${log.date}</small>
+            </td>
+            <td class="align-middle">
+                <strong>${log.utilisateur}</strong>
+            </td>
+            <td class="align-middle">
+                <span class="badge bg-${log.type_badge}">
+                    ${log.type_icon} ${log.type_action}
+                </span>
+            </td>
+            <td class="align-middle">
+                <div class="text-truncate" style="max-width: 300px;" title="${escapeHtml(log.description)}">
+                    ${escapeHtml(log.description)}
+                </div>
+            </td>
+            <td class="align-middle">
+                <code class="text-muted">${log.ip}</code>
+            </td>
+            <td class="align-middle">
+                <small class="text-muted" title="${escapeHtml(log.user_agent_full)}">
+                    ${log.browser}
+                </small>
+            </td>
+        </tr>
+    `).join('');
+    
+    tableBody.innerHTML = html;
+}
+
+// Générer la pagination
+function renderPagination(total, limit, currentPage, totalPages) {
+    const paginationContainer = document.getElementById('paginationLogs');
+    
+    if (totalPages <= 1) {
+        paginationContainer.innerHTML = '';
+        return;
+    }
+    
+    let html = '<ul class="pagination pagination-sm mb-0">';
+    
+    // Bouton Précédent
+    if (currentPage > 1) {
+        html += `
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="chargerLogs(${currentPage - 1}); return false;">
+                    &laquo; Précédent
+                </a>
+            </li>
+        `;
+    } else {
+        html += `
+            <li class="page-item disabled">
+                <span class="page-link">&laquo; Précédent</span>
+            </li>
+        `;
+    }
+    
+    // Numéros de pages
+    const startPage = Math.max(1, currentPage - 2);
+    const endPage = Math.min(totalPages, currentPage + 2);
+    
+    if (startPage > 1) {
+        html += `
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="chargerLogs(1); return false;">1</a>
+            </li>
+        `;
+        if (startPage > 2) {
+            html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+        }
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+        if (i === currentPage) {
+            html += `
+                <li class="page-item active">
+                    <span class="page-link">${i}</span>
+                </li>
+            `;
+        } else {
+            html += `
+                <li class="page-item">
+                    <a class="page-link" href="#" onclick="chargerLogs(${i}); return false;">${i}</a>
+                </li>
+            `;
+        }
+    }
+    
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+        }
+        html += `
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="chargerLogs(${totalPages}); return false;">${totalPages}</a>
+            </li>
+        `;
+    }
+    
+    // Bouton Suivant
+    if (currentPage < totalPages) {
+        html += `
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="chargerLogs(${currentPage + 1}); return false;">
+                    Suivant &raquo;
+                </a>
+            </li>
+        `;
+    } else {
+        html += `
+            <li class="page-item disabled">
+                <span class="page-link">Suivant &raquo;</span>
+            </li>
+        `;
+    }
+    
+    html += '</ul>';
+    paginationContainer.innerHTML = html;
+}
+
+// Purger les logs de plus de 90 jours
+function purgerVieuxLogs() {
+    showConfirmModal({
+        title: 'Purger les vieux logs?',
+        message: 'Cette action va supprimer définitivement tous les logs de plus de 90 jours. Voulez-vous continuer?',
+        onConfirm: () => {
+            // Afficher un spinner dans le bouton
+            const btn = document.querySelector('button[onclick="purgerVieuxLogs()"]');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Purge en cours...';
+            
+            fetch('ajax/purger_logs.php', {
+                method: 'POST'
+            })
+            .then(r => r.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                
+                if (data.success) {
+                    showAlertModal({
+                        title: 'Succès',
+                        message: data.message,
+                        type: 'success'
+                    });
+                    
+                    // Recharger les logs
+                    chargerLogs(1);
+                } else {
+                    showAlertModal({
+                        title: 'Erreur',
+                        message: data.message,
+                        type: 'error'
+                    });
+                }
+            })
+            .catch(error => {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                console.error('Erreur:', error);
+                showAlertModal({
+                    title: 'Erreur',
+                    message: 'Impossible de purger les logs',
+                    type: 'error'
+                });
+            });
+        }
+    });
+}
+
+// Fonction utilitaire pour échapper le HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Charger les logs quand on clique sur le tab Logs
+document.getElementById('logs-tab').addEventListener('click', function() {
+    const logsTableBody = document.getElementById('logsTableBody');
+    // Ne charger qu'une seule fois
+    if (logsTableBody && !logsTableBody.dataset.loaded) {
+        chargerLogs(1);
+        logsTableBody.dataset.loaded = 'true';
+    }
+});
 </script>
 
 <?php include 'footer.php'; ?>
