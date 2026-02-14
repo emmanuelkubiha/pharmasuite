@@ -29,6 +29,20 @@ $alertes = db_fetch_all("
         p.quantite_stock ASC
 ");
 
+$date_today = date('Y-m-d');
+$date_seuil = date('Y-m-d', strtotime('+60 days'));
+$peremptions = db_fetch_all("
+    SELECT p.*, c.nom_categorie
+    FROM produits p
+    LEFT JOIN categories c ON p.id_categorie = c.id_categorie
+    WHERE p.date_peremption IS NOT NULL
+      AND p.date_peremption <> ''
+      AND p.date_peremption <= ?
+      AND p.est_actif = 1
+    ORDER BY p.date_peremption ASC
+", [$date_seuil]);
+");
+
 $count_rupture = count(array_filter($alertes, fn($a) => $a['niveau_alerte'] === 'rupture'));
 $count_critique = count(array_filter($alertes, fn($a) => $a['niveau_alerte'] === 'critique'));
 $count_faible = count(array_filter($alertes, fn($a) => $a['niveau_alerte'] === 'faible'));
@@ -167,6 +181,152 @@ include 'header.php';
     <?php else: ?>
     <div class="card">
         <div class="card-header">
+            <h3 class="card-title">Liste des alertes</h3>
+        </div>
+        <div class="list-group list-group-flush">
+            <?php foreach ($alertes as $produit): ?>
+            <div class="list-group-item alert-card <?php echo $produit['niveau_alerte']; ?>">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="d-flex align-items-center">
+                            <span class="badge 
+                                <?php 
+                                    echo $produit['niveau_alerte'] === 'rupture' ? 'bg-danger' : 
+                                        ($produit['niveau_alerte'] === 'critique' ? 'bg-warning' : 'bg-yellow');
+                                ?> me-2">
+                                <?php 
+                                    echo $produit['niveau_alerte'] === 'rupture' ? 'RUPTURE' : 
+                                        ($produit['niveau_alerte'] === 'critique' ? 'CRITIQUE' : 'FAIBLE');
+                                ?>
+                            </span>
+                            <div>
+                                <strong><?php echo e($produit['nom_produit']); ?></strong>
+                                <div class="text-muted small"><?php echo e($produit['nom_categorie'] ?? 'Sans catégorie'); ?></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-auto text-center">
+                        <div class="text-muted small">Stock actuel</div>
+                        <strong class="<?php echo $produit['quantite_stock'] === 0 ? 'text-danger' : 'text-warning'; ?>">
+                            <?php echo $produit['quantite_stock']; ?>
+                        </strong>
+                    </div>
+                    <div class="col-auto text-center">
+                        <div class="text-muted small">Seuil alerte</div>
+                        <strong><?php echo $produit['seuil_alerte']; ?></strong>
+                    </div>
+                    <div class="col-auto">
+                        <a href="listes.php?page=produits&id=<?php echo $produit['id_produit']; ?>" class="btn btn-sm btn-outline-primary">
+                            Réapprovisionner
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <!-- Section Alertes de Péremption -->
+    <div class="card mt-5">
+        <div class="card-header bg-danger text-white">
+            <h3 class="card-title">Produits proches ou dépassés de péremption</h3>
+        </div>
+        <div class="list-group list-group-flush">
+            <?php if (empty($peremptions)): ?>
+                <div class="list-group-item text-center text-muted">Aucun produit en péremption ou proche de péremption</div>
+            <?php else: ?>
+                <?php foreach ($peremptions as $prod): ?>
+                <div class="list-group-item alert-card rupture">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <strong><?php echo e($prod['nom_produit']); ?></strong>
+                            <div class="text-muted small"><?php echo e($prod['nom_categorie'] ?? 'Sans catégorie'); ?></div>
+                        </div>
+                        <div class="col-auto text-center">
+                            <div class="text-muted small">Date péremption</div>
+                            <strong class="<?php echo ($prod['date_peremption'] < $date_today) ? 'text-danger' : 'text-warning'; ?>">
+                                <?php echo e($prod['date_peremption']); ?>
+                            </strong>
+                        </div>
+                        <div class="col-auto text-center">
+                            <div class="text-muted small">Stock</div>
+                            <strong><?php echo $prod['quantite_stock']; ?></strong>
+                        </div>
+                        <div class="col-auto">
+                            <a href="listes.php?page=peremptions&id=<?php echo $prod['id_produit']; ?>" class="btn btn-sm btn-outline-danger">
+                                Voir fiche produit
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- Section Alertes de Stock -->
+    <?php if (empty($alertes)): ?>
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <div class="avatar avatar-xl bg-success-lt mb-3 mx-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M5 12l5 5l10 -10"/>
+                </svg>
+            </div>
+            <h3 class="mb-2">Aucune alerte de stock</h3>
+            <p class="text-muted">Tous vos produits ont un stock suffisant</p>
+        </div>
+    </div>
+    <?php else: ?>
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Liste des alertes de stock</h3>
+        </div>
+        <div class="list-group list-group-flush">
+            <?php foreach ($alertes as $produit): ?>
+            <div class="list-group-item alert-card <?php echo $produit['niveau_alerte']; ?>">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="d-flex align-items-center">
+                            <span class="badge 
+                                <?php 
+                                    echo $produit['niveau_alerte'] === 'rupture' ? 'bg-danger' : 
+                                        ($produit['niveau_alerte'] === 'critique' ? 'bg-warning' : 'bg-yellow');
+                                ?> me-2">
+                                <?php 
+                                    echo $produit['niveau_alerte'] === 'rupture' ? 'RUPTURE' : 
+                                        ($produit['niveau_alerte'] === 'critique' ? 'CRITIQUE' : 'FAIBLE');
+                                ?>
+                            </span>
+                            <div>
+                                <strong><?php echo e($produit['nom_produit']); ?></strong>
+                                <div class="text-muted small"><?php echo e($produit['nom_categorie'] ?? 'Sans catégorie'); ?></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-auto text-center">
+                        <div class="text-muted small">Stock actuel</div>
+                        <strong class="<?php echo $produit['quantite_stock'] === 0 ? 'text-danger' : 'text-warning'; ?>">
+                            <?php echo $produit['quantite_stock']; ?>
+                        </strong>
+                    </div>
+                    <div class="col-auto text-center">
+                        <div class="text-muted small">Seuil alerte</div>
+                        <strong><?php echo $produit['seuil_alerte']; ?></strong>
+                    </div>
+                    <div class="col-auto">
+                        <a href="listes.php?page=produits&id=<?php echo $produit['id_produit']; ?>" class="btn btn-sm btn-outline-primary">
+                            Réapprovisionner
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; ?>
             <h3 class="card-title">Liste des alertes</h3>
         </div>
         <div class="list-group list-group-flush">

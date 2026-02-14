@@ -656,6 +656,215 @@ include 'header.php';
                 </div>
             </div>
         </div>
+
+        <!-- Section Import/Export de Données -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="card border-primary shadow-lg">
+                    <div class="card-header border-primary bg-gradient" style="background: linear-gradient(135deg, <?php echo $couleur_primaire; ?>, <?php echo $couleur_secondaire; ?>);">
+                        <h3 class="card-title mb-0 text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="28" height="28" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                <path d="M14 3v4a1 1 0 0 0 1 1h4"/>
+                                <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/>
+                                <line x1="12" y1="11" x2="12" y2="17"/>
+                                <polyline points="9 14 12 11 15 14"/>
+                            </svg>
+                            Import / Export de Données
+                        </h3>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="alert alert-info border-0 rounded-lg mb-4">
+                            <div class="d-flex align-items-start">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-3 mt-1 flex-shrink-0" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                    <circle cx="12" cy="12" r="9"/>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"/>
+                                    <polyline points="11 12 12 12 12 16 13 16"/>
+                                </svg>
+                                <div>
+                                    <strong>📊 Gestion des données facilitée</strong><br>
+                                    <small>Importez vos données depuis un fichier Excel ou exportez vos données vers Excel pour analyse ou sauvegarde.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Importation -->
+                            <div class="col-lg-6 mb-4">
+                                <div class="card h-100 border-success">
+                                    <div class="card-header bg-success-lt">
+                                        <h4 class="card-title mb-0">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2 text-success" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"/>
+                                                <polyline points="7 9 12 4 17 9"/>
+                                                <line x1="12" y1="4" x2="12" y2="16"/>
+                                            </svg>
+                                            Importer des données
+                                        </h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="text-muted mb-3">Importez vos produits, clients ou fournisseurs depuis un fichier Excel (.xlsx, .xls) ou CSV.</p>
+                                        
+                                        <form id="formImport" enctype="multipart/form-data">
+                                            <div class="mb-3">
+                                                <label class="form-label">Type de données</label>
+                                                <select class="form-select" name="type_import" id="typeImport" required>
+                                                    <option value="produits">Produits / Médicaments</option>
+                                                    <option value="clients">Clients</option>
+                                                    <option value="fournisseurs">Fournisseurs</option>
+                                                </select>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label">Fichier Excel / CSV</label>
+                                                <input type="file" class="form-control" name="fichier_excel" id="fichierImport" accept=".xlsx,.xls,.csv" required>
+                                                <small class="text-muted">Formats acceptés : .xlsx, .xls, .csv (max 10 MB)</small>
+                                            </div>
+                                            
+                                            <div class="alert alert-warning small mb-3">
+                                                <strong>Format attendu :</strong>
+                                                <ul class="mb-0 mt-2" id="formatAttendu">
+                                                    <li><strong>Produits :</strong> nom_produit, code_barre, categorie, prix_achat, prix_vente, quantite_stock, seuil_alerte</li>
+                                                </ul>
+                                            </div>
+                                            
+                                            <button type="submit" class="btn btn-success w-100">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                    <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"/>
+                                                    <polyline points="7 9 12 4 17 9"/>
+                                                    <line x1="12" y1="4" x2="12" y2="16"/>
+                                                </svg>
+                                                Importer maintenant
+                                            </button>
+                                        </form>
+                                        
+                                        <div id="importResult" class="mt-3" style="display:none;"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Exportation -->
+                            <div class="col-lg-6 mb-4">
+                                <div class="card h-100 border-info">
+                                    <div class="card-header bg-info-lt">
+                                        <h4 class="card-title mb-0">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2 text-info" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"/>
+                                                <polyline points="7 11 12 16 17 11"/>
+                                                <line x1="12" y1="4" x2="12" y2="16"/>
+                                            </svg>
+                                            Exporter des données
+                                        </h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="text-muted mb-3">Exportez vos données vers Excel pour analyse, sauvegarde ou partage.</p>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Type de données à exporter</label>
+                                            <select class="form-select" id="typeExport">
+                                                <option value="produits">Produits / Médicaments</option>
+                                                <option value="ventes">Ventes</option>
+                                                <option value="categories">Catégories</option>
+                                                <option value="stock">État du stock</option>
+                                                <option value="mouvements_stock">Mouvements de stock</option>
+                                                <option value="alertes_stock">Alertes de stock</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="mb-3" id="periodeExport">
+                                            <label class="form-label">Période (pour ventes/mouvements)</label>
+                                            <div class="row g-2">
+                                                <div class="col-6">
+                                                    <input type="date" class="form-control" id="dateDebutExport" value="<?php echo date('Y-m-01'); ?>">
+                                                    <small class="text-muted">Du</small>
+                                                </div>
+                                                <div class="col-6">
+                                                    <input type="date" class="form-control" id="dateFinExport" value="<?php echo date('Y-m-d'); ?>">
+                                                    <small class="text-muted">Au</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <button type="button" class="btn btn-info w-100 mb-2" onclick="exporterExcel()">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                <path d="M14 3v4a1 1 0 0 0 1 1h4"/>
+                                                <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/>
+                                                <line x1="10" y1="12" x2="10" y2="16"/>
+                                                <line x1="14" y1="12" x2="14" y2="16"/>
+                                            </svg>
+                                            Télécharger en Excel (.xls)
+                                        </button>
+                                        
+                                        <button type="button" class="btn btn-outline-info w-100" onclick="exporterPDF()">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                <path d="M14 3v4a1 1 0 0 0 1 1h4"/>
+                                                <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/>
+                                                <line x1="10" y1="17" x2="10" y2="13"/>
+                                                <line x1="14" y1="17" x2="14" y2="13"/>
+                                            </svg>
+                                            Télécharger en PDF
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Modèles Excel à télécharger -->
+                        <div class="card border-warning mt-3">
+                            <div class="card-header bg-warning-lt">
+                                <h5 class="card-title mb-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2 text-warning" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                        <path d="M14 3v4a1 1 0 0 0 1 1h4"/>
+                                        <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/>
+                                        <line x1="9" y1="14" x2="15" y2="14"/>
+                                    </svg>
+                                    Modèles Excel à télécharger
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted small mb-3">Téléchargez un modèle Excel pré-formaté pour faciliter l'import de vos données.</p>
+                                <div class="btn-list">
+                                    <a href="ajax/generer_modele.php?type=produits" class="btn btn-outline-warning btn-sm">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                            <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"/>
+                                            <polyline points="7 11 12 16 17 11"/>
+                                            <line x1="12" y1="4" x2="12" y2="16"/>
+                                        </svg>
+                                        Modèle Produits
+                                    </a>
+                                    <a href="ajax/generer_modele.php?type=clients" class="btn btn-outline-warning btn-sm">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                            <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"/>
+                                            <polyline points="7 11 12 16 17 11"/>
+                                            <line x1="12" y1="4" x2="12" y2="16"/>
+                                        </svg>
+                                        Modèle Clients
+                                    </a>
+                                    <a href="ajax/generer_modele.php?type=fournisseurs" class="btn btn-outline-warning btn-sm">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                            <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"/>
+                                            <polyline points="7 11 12 16 17 11"/>
+                                            <line x1="12" y1="4" x2="12" y2="16"/>
+                                        </svg>
+                                        Modèle Fournisseurs
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -919,7 +1128,101 @@ document.addEventListener('DOMContentLoaded', function() {
     tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
+    
+    // Gérer le changement de type d'import pour afficher le format attendu
+    document.getElementById('typeImport').addEventListener('change', function() {
+        const type = this.value;
+        const formatDiv = document.getElementById('formatAttendu');
+        
+        const formats = {
+            'produits': '<li><strong>Produits :</strong> nom_produit, code_barre, categorie, prix_achat, prix_vente, quantite_stock, seuil_alerte</li>',
+            'clients': '<li><strong>Clients :</strong> nom_client, telephone, email, adresse</li>',
+            'fournisseurs': '<li><strong>Fournisseurs :</strong> nom_fournisseur, telephone, email, adresse</li>'
+        };
+        
+        formatDiv.innerHTML = formats[type] || '';
+    });
 });
+
+// Gérer l'import de fichier Excel
+document.getElementById('formImport').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const btn = this.querySelector('button[type="submit"]');
+    const resultDiv = document.getElementById('importResult');
+    
+    // Désactiver le bouton
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Import en cours...';
+    
+    fetch('ajax/import_excel.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"/><polyline points="7 9 12 4 17 9"/><line x1="12" y1="4" x2="12" y2="16"/></svg>Importer maintenant';
+        
+        if (data.success) {
+            resultDiv.className = 'alert alert-success mt-3';
+            resultDiv.innerHTML = `
+                <strong>✅ ${data.message}</strong>
+                ${data.stats ? `
+                    <ul class="mb-0 mt-2">
+                        <li>Ajoutés : ${data.stats.ajoutes}</li>
+                        <li>Mis à jour : ${data.stats.mis_a_jour}</li>
+                        <li>Erreurs : ${data.stats.erreurs}</li>
+                    </ul>
+                ` : ''}
+            `;
+            resultDiv.style.display = 'block';
+            
+            // Réinitialiser le formulaire
+            document.getElementById('formImport').reset();
+            
+            // Masquer le message après 10 secondes
+            setTimeout(() => {
+                resultDiv.style.display = 'none';
+            }, 10000);
+        } else {
+            resultDiv.className = 'alert alert-danger mt-3';
+            resultDiv.innerHTML = `<strong>❌ Erreur :</strong> ${data.message}`;
+            resultDiv.style.display = 'block';
+        }
+    })
+    .catch(error => {
+        btn.disabled = false;
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"/><polyline points="7 9 12 4 17 9"/><line x1="12" y1="4" x2="12" y2="16"/></svg>Importer maintenant';
+        
+        resultDiv.className = 'alert alert-danger mt-3';
+        resultDiv.innerHTML = `<strong>❌ Erreur :</strong> ${error.message}`;
+        resultDiv.style.display = 'block';
+    });
+});
+
+// Export Excel
+function exporterExcel() {
+    const type = document.getElementById('typeExport').value;
+    const dateDebut = document.getElementById('dateDebutExport').value;
+    const dateFin = document.getElementById('dateFinExport').value;
+    
+    const url = `ajax/export_excel.php?type=${type}&date_debut=${dateDebut}&date_fin=${dateFin}`;
+    window.open(url, '_blank');
+}
+
+// Export PDF
+function exporterPDF() {
+    const type = document.getElementById('typeExport').value;
+    const dateDebut = document.getElementById('dateDebutExport').value;
+    const dateFin = document.getElementById('dateFinExport').value;
+    
+    const url = `ajax/export_pdf.php?type=${type}&date_debut=${dateDebut}&date_fin=${dateFin}`;
+    window.open(url, '_blank');
+}
+
+
 </script>
 
 <?php include 'footer.php'; ?>

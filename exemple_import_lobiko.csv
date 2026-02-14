@@ -1,0 +1,11 @@
+nom_produit;code_barre;categorie;prix_achat;prix_vente;quantite_stock;seuil_alerte
+Paracétamol 500mg;8719327098233;Médicaments Humains;100;150;50;10
+Amoxicilline 1g;8719327098240;Antibiotiques Humains;300;450;30;5
+Vitamine C 1000mg;8719327098257;Vitamines et Compléments;50;80;100;20
+Aspirine 100mg;8719327098264;Médicaments Humains;80;120;60;15
+Ibuprofène 400mg;8719327098271;Anti-inflammatoires;120;180;40;10
+Engrais NPK 15-15-15;8719327098288;Intrants Agricoles;500;750;200;50
+Semences de Maïs Hybride;8719327098295;Semences Agricoles;1000;1500;150;30
+Vermifuge Bovin;8719327098301;Médicaments Vétérinaires;800;1200;25;5
+Antibiotique Volaille;8719327098318;Médicaments Vétérinaires;400;600;40;10
+Insecticide Lambda;8719327098325;Pesticides Agricoles;1200;1800;30;10
