@@ -26,7 +26,7 @@ try {
     $sql_ventes = "
         SELECT 
             v.date_vente as date,
-            CONCAT('Vente N°', v.numero_vente) as libelle,
+            CONCAT('Vente N°', v.numero_facture) as libelle,
             v.montant_total as montant,
             'Entrée' as type,
             'Vente' as categorie,
